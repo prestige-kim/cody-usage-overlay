@@ -38,5 +38,6 @@ xattr -cr "$PACKAGE_DIR"
 codesign --verify --deep --strict --verbose=2 "$PACKAGE_DIR/dist/CodyUsageOverlay.app"
 
 ditto -c -k --norsrc --noextattr --noqtn --noacl --keepParent "$PACKAGE_DIR" "$ARCHIVE"
-shasum -a 256 "$ARCHIVE" > "$ARCHIVE.sha256"
+CHECKSUM=$(shasum -a 256 "$ARCHIVE" | awk '{print $1}')
+printf "%s  %s\n" "$CHECKSUM" "${ARCHIVE:t}" > "$ARCHIVE.sha256"
 echo "$ARCHIVE"

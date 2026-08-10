@@ -7,6 +7,12 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-10
+
+### Fixed
+
+- Release checksum files now contain a portable archive filename instead of a GitHub runner path.
+
 ## [0.1.1] - 2026-08-10
 
 ### Added
@@ -33,6 +39,7 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/prestige-kim/cody-usage-overlay/releases/tag/v0.1.0

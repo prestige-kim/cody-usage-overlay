@@ -45,7 +45,7 @@ jobs:
       - name: Package and inspect distribution
         run: |
           ./scripts/package-release.sh "$RUNNER_TEMP"
-          shasum -a 256 -c "$RUNNER_TEMP"/CodyUsageOverlay-*.zip.sha256
+          (cd "$RUNNER_TEMP" && shasum -a 256 -c CodyUsageOverlay-*.zip.sha256)
           mkdir "$RUNNER_TEMP/unpacked"
           ditto -x -k "$RUNNER_TEMP"/CodyUsageOverlay-*.zip "$RUNNER_TEMP/unpacked"
           test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/Install.command
