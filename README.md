@@ -28,8 +28,10 @@ Cody가 화면에 있으면 발밑을 따라다니고, 펫을 숨기면 상태�
 ### GitHub Release에서 설치
 
 1. [Releases](https://github.com/prestige-kim/cody-usage-overlay/releases)에서 최신 `CodyUsageOverlay-*.zip`을 받습니다.
-2. 압축을 풀고 `CodyUsageOverlay.app`을 `~/Applications` 또는 `/Applications`로 옮깁니다.
-3. 최초 실행이 차단되면 Finder에서 앱을 Control-클릭한 뒤 **열기**를 선택합니다.
+2. 압축을 풀고 폴더 안의 `Install.command`를 실행합니다.
+3. macOS가 실행을 차단하면 Finder에서 `Install.command`를 Control-클릭한 뒤 **열기**를 선택합니다.
+
+설치 명령은 앱을 `~/Applications/CodyUsageOverlay.app`에 복사하고 로그인 시 자동 실행되는 LaunchAgent를 등록합니다. 삭제할 때는 같은 폴더의 `Uninstall.command`를 실행하세요. 설정과 로그는 기본적으로 보존됩니다.
 
 현재 배포 파일은 Developer ID 서명과 Apple 공증을 거치지 않은 시험판입니다. 다운로드한 파일은 함께 제공되는 `.sha256` 체크섬으로 확인할 수 있습니다.
 

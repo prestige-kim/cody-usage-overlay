@@ -42,13 +42,22 @@ jobs:
           codesign --verify --deep --strict --verbose=2 dist/CodyUsageOverlay.app
           file dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay | grep -q arm64
 
-      - name: Package CI artifact
-        run: ditto -c -k --keepParent dist/CodyUsageOverlay.app CodyUsageOverlay-ci.zip
+      - name: Package and inspect distribution
+        run: |
+          ./scripts/package-release.sh "$RUNNER_TEMP"
+          shasum -a 256 -c "$RUNNER_TEMP"/CodyUsageOverlay-*.zip.sha256
+          mkdir "$RUNNER_TEMP/unpacked"
+          ditto -x -k "$RUNNER_TEMP"/CodyUsageOverlay-*.zip "$RUNNER_TEMP/unpacked"
+          test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/Install.command
+          test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/Uninstall.command
+          test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay
 
       - name: Upload CI artifact
         uses: actions/upload-artifact@v4
         with:
           name: CodyUsageOverlay-${{ github.sha }}
-          path: CodyUsageOverlay-ci.zip
+          path: |
+            ${{ runner.temp }}/CodyUsageOverlay-*.zip
+            ${{ runner.temp }}/CodyUsageOverlay-*.zip.sha256
           if-no-files-found: error
           retention-days: 7

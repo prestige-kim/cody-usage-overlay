@@ -49,12 +49,9 @@ jobs:
           file dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay | grep -q arm64
 
       - name: Package release assets
-        env:
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
-          archive="CodyUsageOverlay-${RELEASE_TAG#v}-arm64.zip"
-          ditto -c -k --keepParent dist/CodyUsageOverlay.app "$archive"
-          shasum -a 256 "$archive" > "$archive.sha256"
+          ./scripts/package-release.sh "$PWD"
+          shasum -a 256 -c CodyUsageOverlay-*.zip.sha256
 
       - name: Publish GitHub Release
         env:
