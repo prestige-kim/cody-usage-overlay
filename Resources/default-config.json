@@ -1,0 +1,9 @@
+{
+  "launchAtLogin": true,
+  "anchorMode": "petWindow",
+  "offsetX": 0,
+  "offsetY": 12,
+  "clickThrough": false,
+  "warningThreshold": 30,
+  "criticalThreshold": 10
+}
