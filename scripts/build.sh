@@ -13,10 +13,12 @@ fi
 mkdir -p "$BUILD_DIR/cache" "$PROJECT_DIR/dist"
 SDKROOT="$SDK_PATH" CLANG_MODULE_CACHE_PATH="$BUILD_DIR/cache" \
   swift build --disable-sandbox -c release --package-path "$PROJECT_DIR"
+BIN_DIR=$(SDKROOT="$SDK_PATH" CLANG_MODULE_CACHE_PATH="$BUILD_DIR/cache" \
+  swift build --disable-sandbox -c release --package-path "$PROJECT_DIR" --show-bin-path)
 
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
-cp "$BUILD_DIR/arm64-apple-macosx/release/CodyUsageOverlay" "$APP_DIR/Contents/MacOS/CodyUsageOverlay"
+cp "$BIN_DIR/CodyUsageOverlay" "$APP_DIR/Contents/MacOS/CodyUsageOverlay"
 cp "$PROJECT_DIR/Resources/Info.plist" "$APP_DIR/Contents/Info.plist"
 cp "$PROJECT_DIR/Resources/codex-emoji.png" "$APP_DIR/Contents/Resources/codex-emoji.png"
 for attempt in 1 2 3; do

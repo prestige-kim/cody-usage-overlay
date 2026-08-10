@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-check:
+    name: Build and check (Apple Silicon)
+    runs-on: macos-15
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          uname -m
+          xcodebuild -version
+          swift --version
+
+      - name: Run core checks
+        run: ./scripts/check.sh
+
+      - name: Build app bundle
+        run: ./scripts/build.sh
+
+      - name: Validate bundle
+        run: |
+          test -x dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay
+          plutil -lint dist/CodyUsageOverlay.app/Contents/Info.plist
+          codesign --verify --deep --strict --verbose=2 dist/CodyUsageOverlay.app
+          file dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay | grep -q arm64
+
+      - name: Package CI artifact
+        run: ditto -c -k --keepParent dist/CodyUsageOverlay.app CodyUsageOverlay-ci.zip
+
+      - name: Upload CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodyUsageOverlay-${{ github.sha }}
+          path: CodyUsageOverlay-ci.zip
+          if-no-files-found: error
+          retention-days: 7

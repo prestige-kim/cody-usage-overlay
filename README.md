@@ -1,5 +1,7 @@
 # Cody Usage Overlay
 
+[![CI](https://github.com/prestige-kim/cody-usage-overlay/actions/workflows/ci.yml/badge.svg)](https://github.com/prestige-kim/cody-usage-overlay/actions/workflows/ci.yml)
+
 An unofficial macOS overlay that displays local Codex Desktop usage counters.
 It can follow a visible Cody pet or be moved freely when no pet is shown.
 
