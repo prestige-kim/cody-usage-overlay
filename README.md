@@ -61,8 +61,8 @@ cd cody-usage-overlay
 
 ## 사용법
 
-- Cody가 보이면 상태창이 Cody의 발 바로 아래에 고정됩니다.
-- Cody가 없으면 상태창을 드래그해 원하는 곳으로 이동할 수 있습니다.
+- Codex Pet이 보이면 상태창이 Pet의 발 바로 아래에 고정됩니다.
+- Pet이 없으면 상태창을 드래그해 원하는 곳으로 이동할 수 있습니다.
 - 상태창을 우클릭하면 새로고침, 위치 재탐색, 항상 위, 진단 정보 복사, 종료 메뉴를 사용할 수 있습니다.
 - 설정은 `~/Library/Application Support/CodyUsageOverlay/config.json`에 저장됩니다.
 
