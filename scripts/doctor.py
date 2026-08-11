@@ -2,52 +2,76 @@
 import json
 import os
 import pathlib
+import queue
 import subprocess
 import sys
 import threading
 
-CODEX_CANDIDATES = [
-    pathlib.Path("/Applications/ChatGPT.app/Contents/Resources/codex"),
-    pathlib.Path(os.popen("command -v codex 2>/dev/null").read().strip()),
-]
+def codex_candidates():
+    home = pathlib.Path.home()
+    candidates = []
+    for root in (pathlib.Path("/Applications"), home / "Applications"):
+        for app in ("ChatGPT.app", "Codex.app"):
+            candidates.append(root / app / "Contents/Resources/codex")
+    candidates += [
+        home / ".local/bin/codex",
+        home / ".codex/bin/codex",
+        pathlib.Path("/opt/homebrew/bin/codex"),
+        pathlib.Path("/usr/local/bin/codex"),
+    ]
+    candidates += [pathlib.Path(directory) / "codex" for directory in os.environ.get("PATH", "").split(":") if directory]
+    return list(dict.fromkeys(candidates))
 
 def find_codex():
-    return next((p for p in CODEX_CANDIDATES if str(p) and p.is_file() and os.access(p, os.X_OK)), None)
+    return next((p for p in codex_candidates() if p.is_file() and os.access(p, os.X_OK)), None)
+
+class ResponseReader:
+    def __init__(self, stream):
+        self.items = queue.Queue()
+        self.thread = threading.Thread(target=self._read, args=(stream,), daemon=True)
+        self.thread.start()
+
+    def _read(self, stream):
+        try:
+            for line in stream:
+                self.items.put(json.loads(line))
+        except Exception as exc:
+            self.items.put(exc)
+
+    def response(self, request_id, timeout=15):
+        while True:
+            try:
+                item = self.items.get(timeout=timeout)
+            except queue.Empty:
+                raise RuntimeError(f"request {request_id} timed out")
+            if isinstance(item, Exception):
+                raise item
+            if item.get("id") == request_id:
+                return item
 
 def rpc_check(executable):
     process = subprocess.Popen([str(executable), "app-server", "--stdio"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    reader = ResponseReader(process.stdout)
     def send(obj):
         process.stdin.write(json.dumps(obj, separators=(",", ":")) + "\n"); process.stdin.flush()
-    send({"id": 1, "method": "initialize", "params": {"clientInfo": {"name": "cody-overlay-doctor", "title": "Doctor", "version": "1"}, "capabilities": {"experimentalApi": True}}})
-    initialized = None
-    for _ in range(20):
-        line = process.stdout.readline()
-        if not line: break
-        item = json.loads(line)
-        if item.get("id") == 1:
-            initialized = item
-            break
-    if not initialized or "result" not in initialized:
-        process.terminate()
-        detail = (initialized or {}).get("error", {}).get("message")
-        if not detail and process.stderr:
-            detail = process.stderr.read().strip().splitlines()[-1:] or None
-            if isinstance(detail, list): detail = detail[0] if detail else None
-        raise RuntimeError(detail or "initialize response missing")
-    send({"method": "initialized", "params": {}})
-    send({"id": 2, "method": "account/rateLimits/read", "params": {}})
-    result = None
-    for _ in range(20):
-        line = process.stdout.readline()
-        if not line: break
-        item = json.loads(line)
-        if item.get("id") == 2:
-            result = item
-            break
-    process.terminate()
-    if not result or "result" not in result:
-        raise RuntimeError((result or {}).get("error", {}).get("message", "rate-limit response missing"))
-    return result["result"]
+    try:
+        send({"id": 1, "method": "initialize", "params": {"clientInfo": {"name": "cody-overlay-doctor", "title": "Doctor", "version": "1"}, "capabilities": {"experimentalApi": True}}})
+        initialized = reader.response(1)
+        if "result" not in initialized:
+            raise RuntimeError(initialized.get("error", {}).get("message", "initialize response missing"))
+        send({"method": "initialized", "params": {}})
+        send({"id": 2, "method": "account/rateLimits/read", "params": {}})
+        result = reader.response(2)
+        if "result" not in result:
+            raise RuntimeError(result.get("error", {}).get("message", "rate-limit response missing"))
+        return result["result"]
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
 
 def rollout_check():
     root = pathlib.Path.home() / ".codex" / "sessions"
@@ -62,7 +86,7 @@ def rollout_check():
     return max(candidates, key=lambda p: p.stat().st_mtime) if candidates else None
 
 def main():
-    report = {"ok": False, "codex": None, "appServer": False, "rateLimitFields": [], "rollout": None, "petPackage": False}
+    report = {"ok": False, "codex": None, "searchedCodexPaths": [str(p) for p in codex_candidates()], "appServer": False, "rateLimitFields": [], "rollout": None, "petPackage": False}
     executable = find_codex()
     if not executable:
         print(json.dumps(report, ensure_ascii=False, indent=2)); return 1

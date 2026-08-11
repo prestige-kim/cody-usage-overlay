@@ -19,7 +19,7 @@ Cody가 화면에 있으면 발밑을 따라다니고, 펫을 숨기면 상태�
 
 ## 요구 사항
 
-- macOS 13 이상
+- macOS 14 이상
 - Apple Silicon Mac (`arm64`)
 - 설치 및 로그인된 Codex Desktop
 
@@ -32,6 +32,8 @@ Cody가 화면에 있으면 발밑을 따라다니고, 펫을 숨기면 상태�
 3. macOS가 실행을 차단하면 Finder에서 `Install.command`를 Control-클릭한 뒤 **열기**를 선택합니다.
 
 설치 명령은 앱을 `~/Applications/CodyUsageOverlay.app`에 복사하고 로그인 시 자동 실행되는 LaunchAgent를 등록합니다. 삭제할 때는 같은 폴더의 `Uninstall.command`를 실행하세요. 설정과 로그는 기본적으로 보존됩니다.
+
+설치 후 값이나 Pet 위치가 잡히지 않으면 같은 폴더의 `Doctor.command`를 실행하세요. Codex 실행 파일, app-server 연결, rate-limit 응답과 Desktop 세션 접근을 점검합니다.
 
 현재 배포 파일은 Developer ID 서명과 Apple 공증을 거치지 않은 시험판입니다. 다운로드한 파일은 함께 제공되는 `.sha256` 체크섬으로 확인할 수 있습니다.
 
@@ -87,6 +89,14 @@ cd cody-usage-overlay
 ```
 
 `main` 브랜치와 Pull Request는 GitHub Actions에서 Apple Silicon macOS 빌드, 코어 검사, 앱 번들 및 ad-hoc 서명을 자동 검증합니다.
+
+### 문제 해결
+
+- 설치가 차단되면 `Install.command`를 Control-클릭하고 **열기**를 선택합니다.
+- Usage 값이 `—`로 남으면 Release 폴더의 `Doctor.command`를 실행합니다.
+- 앱은 `/Applications`와 `~/Applications`의 `ChatGPT.app` 또는 `Codex.app`, Homebrew 경로, `~/.local/bin`, `~/.codex/bin`에서 Codex 실행 파일을 찾습니다.
+- Pet 위치가 잡히지 않으면 상태창을 우클릭해 **진단 정보 복사**를 실행하고 `Matched windows`와 `Pet` 항목을 확인합니다. macOS가 창 정보 접근을 제한한 환경에서는 화면 기록 권한 허용이 필요할 수 있습니다.
+- Intel Mac은 현재 Release 바이너리를 실행할 수 없습니다. 소스 코드는 macOS 14 이상을 대상으로 하지만 공개 Release는 Apple Silicon 전용입니다.
 
 ## 알려진 제한 사항
 

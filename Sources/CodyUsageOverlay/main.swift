@@ -112,15 +112,25 @@ final class WindowLocator {
     }
     private var petWindowID: CGWindowID?
     private var lastActivityDistance: CGFloat?
+    private(set) var diagnosticsText = "Window discovery has not run yet."
 
     func chatGPTRunning() -> Bool {
         NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.openai.codex" }
     }
 
     func anchorLayout() -> AnchorLayout? {
-        guard let info = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return nil }
+        guard let info = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+            diagnosticsText = "CGWindowList: unavailable"
+            return nil
+        }
+        let codexPIDs = Set(NSWorkspace.shared.runningApplications.compactMap { app -> pid_t? in
+            guard ["com.openai.codex", "com.openai.chat"].contains(app.bundleIdentifier ?? "") else { return nil }
+            return app.processIdentifier
+        })
         let windows: [(rect: CGRect, layer: Int, id: CGWindowID, name: String)] = info.compactMap { row in
-            guard row[kCGWindowOwnerName as String] as? String == "ChatGPT",
+            let ownerName = (row[kCGWindowOwnerName as String] as? String ?? "").lowercased()
+            let ownerPID = (row[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value
+            guard (ownerPID.map { codexPIDs.contains($0) } == true || ["chatgpt", "codex"].contains(ownerName)),
                   let bounds = row[kCGWindowBounds as String] as? [String: Any],
                   let rect = CGRect(dictionaryRepresentation: bounds as CFDictionary),
                   let number = row[kCGWindowNumber as String] as? NSNumber else { return nil }
@@ -135,6 +145,8 @@ final class WindowLocator {
         // temporary hit-area window during a drag, which must not replace it.
         let pet = if let petWindowID, let tracked = windows.first(where: { $0.id == petWindowID }) {
             tracked
+        } else if let named = windows.first(where: { $0.name.localizedCaseInsensitiveContains("Pet Mascot Effect") }) {
+            named
         } else {
             windows
             .filter {
@@ -152,8 +164,18 @@ final class WindowLocator {
         if let pet {
             petWindowID = pet.id
             let petFrame = cocoaCoordinates(pet.rect)
-            let activity = windows
-                .filter { $0.name == "Codex Pet Activity Stack Backing" }
+            let nearbyActivities = windows.filter {
+                $0.id != pet.id &&
+                $0.rect.width >= 180 && $0.rect.width <= 600 &&
+                $0.rect.height >= 30 && $0.rect.height <= 100 &&
+                abs($0.rect.midX - pet.rect.midX) <= 300 &&
+                abs($0.rect.midY - pet.rect.midY) <= 500
+            }
+            let namedActivities = nearbyActivities.filter {
+                let name = $0.name.lowercased()
+                return name.contains("pet") && name.contains("activity")
+            }
+            let activity = (namedActivities.isEmpty ? nearbyActivities : namedActivities)
                 .min {
                     abs($0.rect.midX - pet.rect.midX) + abs($0.rect.midY - pet.rect.midY)
                     < abs($1.rect.midX - pet.rect.midX) + abs($1.rect.midY - pet.rect.midY)
@@ -162,15 +184,17 @@ final class WindowLocator {
             if let activity {
                 lastActivityDistance = abs(activity.midY - petFrame.midY)
             }
+            diagnosticsText = "Codex PIDs: \(codexPIDs.sorted())\nMatched windows: \(windows.count)\nPet: \(pet.name.isEmpty ? "unnamed" : pet.name)\nActivity: \(activity == nil ? "fallback" : "matched")"
             return AnchorLayout(pet: petFrame, activity: activity, activityDistance: lastActivityDistance)
         }
         petWindowID = nil
+        diagnosticsText = "Codex PIDs: \(codexPIDs.sorted())\nMatched windows: \(windows.count)\nPet: not found"
         return nil
     }
 
     private func cocoaCoordinates(_ quartz: CGRect) -> CGRect {
-        guard let screen = NSScreen.screens.first else { return quartz }
-        return CGRect(x: quartz.minX, y: screen.frame.maxY - quartz.maxY, width: quartz.width, height: quartz.height)
+        let mainDisplayHeight = CGDisplayBounds(CGMainDisplayID()).height
+        return CGRect(x: quartz.minX, y: mainDisplayHeight - quartz.maxY, width: quartz.width, height: quartz.height)
     }
 }
 
@@ -302,7 +326,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func repositionNow() { reposition(forceFront: true) }
     @objc private func spaceChanged() { reposition(forceFront: true) }
     @objc private func toggleTop(_ sender: NSMenuItem) { alwaysOnTop.toggle(); sender.state = alwaysOnTop ? .on : .off; reposition() }
-    @objc private func copyDiagnostics() { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(coordinator.diagnostics(), forType: .string) }
+    @objc private func copyDiagnostics() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(coordinator.diagnostics() + "\n" + locator.diagnosticsText, forType: .string)
+    }
     @objc private func quit() { NSApp.terminate(nil) }
 
     private func hideUntilPetReturns() {

@@ -27,13 +27,16 @@ mkdir -p "$PACKAGE_DIR/dist" "$PACKAGE_DIR/scripts" "$PACKAGE_DIR/Resources" "$O
 ditto "$APP_SOURCE" "$PACKAGE_DIR/dist/CodyUsageOverlay.app"
 cp "$PROJECT_DIR/scripts/Install.command" "$PACKAGE_DIR/Install.command"
 cp "$PROJECT_DIR/scripts/Uninstall.command" "$PACKAGE_DIR/Uninstall.command"
+cp "$PROJECT_DIR/scripts/Doctor.command" "$PACKAGE_DIR/Doctor.command"
 cp "$PROJECT_DIR/scripts/install.sh" "$PACKAGE_DIR/scripts/install.sh"
 cp "$PROJECT_DIR/scripts/uninstall.sh" "$PACKAGE_DIR/scripts/uninstall.sh"
+cp "$PROJECT_DIR/scripts/doctor.sh" "$PACKAGE_DIR/scripts/doctor.sh"
+cp "$PROJECT_DIR/scripts/doctor.py" "$PACKAGE_DIR/scripts/doctor.py"
 cp "$PROJECT_DIR/Resources/default-config.json" "$PACKAGE_DIR/Resources/default-config.json"
 cp "$PROJECT_DIR/Resources/com.proudchris.cody-usage-overlay.plist" "$PACKAGE_DIR/Resources/com.proudchris.cody-usage-overlay.plist"
 cp "$PROJECT_DIR/README.md" "$PACKAGE_DIR/README.md"
 cp "$PROJECT_DIR/LICENSE" "$PACKAGE_DIR/LICENSE"
-chmod +x "$PACKAGE_DIR/Install.command" "$PACKAGE_DIR/Uninstall.command" "$PACKAGE_DIR/scripts/"*.sh
+chmod +x "$PACKAGE_DIR/Install.command" "$PACKAGE_DIR/Uninstall.command" "$PACKAGE_DIR/Doctor.command" "$PACKAGE_DIR/scripts/"*.sh "$PACKAGE_DIR/scripts/doctor.py"
 xattr -cr "$PACKAGE_DIR"
 codesign --verify --deep --strict --verbose=2 "$PACKAGE_DIR/dist/CodyUsageOverlay.app"
 

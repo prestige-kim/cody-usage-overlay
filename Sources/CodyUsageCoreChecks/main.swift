@@ -55,6 +55,16 @@ do {
     let context = ContextUsage(threadId: "root", usedTokens: 25_000, modelContextWindow: 100_000, updatedAt: Date())
     try expect(context.remainingPercent == 75, "context calculation")
 
+    let executableCandidates = AppServerClient.candidateExecutableURLs(
+        homeDirectory: URL(fileURLWithPath: "/Users/tester"),
+        environmentPath: "/custom/bin:/opt/homebrew/bin"
+    ).map(\.path)
+    try expect(executableCandidates.contains("/Applications/ChatGPT.app/Contents/Resources/codex"), "system ChatGPT app candidate")
+    try expect(executableCandidates.contains("/Users/tester/Applications/Codex.app/Contents/Resources/codex"), "user Codex app candidate")
+    try expect(executableCandidates.contains("/Users/tester/.local/bin/codex"), "user CLI candidate")
+    try expect(executableCandidates.contains("/custom/bin/codex"), "PATH CLI candidate")
+    try expect(executableCandidates.filter { $0 == "/opt/homebrew/bin/codex" }.count == 1, "candidate paths must be deduplicated")
+
     var visibility = OverlayVisibilityController()
     visibility.dismiss(petIsVisible: true)
     try expect(!visibility.update(petIsVisible: true), "dismissed overlay stays hidden while pet remains visible")
