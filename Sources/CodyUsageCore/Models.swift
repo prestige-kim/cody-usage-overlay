@@ -37,6 +37,34 @@ public struct UsageSnapshot: Codable, Equatable, Sendable {
 
 public enum AnchorMode: String, Codable, Sendable { case petWindow, mainWindow, manual }
 
+public struct OverlayVisibilityController: Sendable {
+    public enum State: Sendable { case visible, waitingForPetToDisappear, waitingForPetToAppear }
+    public private(set) var state: State = .visible
+
+    public init() {}
+
+    public mutating func dismiss(petIsVisible: Bool) {
+        state = petIsVisible ? .waitingForPetToDisappear : .waitingForPetToAppear
+    }
+
+    @discardableResult
+    public mutating func update(petIsVisible: Bool) -> Bool {
+        switch state {
+        case .visible:
+            return true
+        case .waitingForPetToDisappear:
+            if !petIsVisible { state = .waitingForPetToAppear }
+            return false
+        case .waitingForPetToAppear:
+            if petIsVisible {
+                state = .visible
+                return true
+            }
+            return false
+        }
+    }
+}
+
 public struct OverlayConfig: Codable, Equatable, Sendable {
     public var launchAtLogin = true
     public var anchorMode = AnchorMode.petWindow

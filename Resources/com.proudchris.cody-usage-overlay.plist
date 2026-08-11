@@ -4,7 +4,7 @@
   <key>Label</key><string>com.proudchris.cody-usage-overlay</string>
   <key>ProgramArguments</key><array><string>__APP_PATH__/Contents/MacOS/CodyUsageOverlay</string></array>
   <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><false/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
   <key>ProcessType</key><string>Interactive</string>
   <key>StandardOutPath</key><string>__LOG_DIR__/stdout.log</string>
   <key>StandardErrorPath</key><string>__LOG_DIR__/stderr.log</string>

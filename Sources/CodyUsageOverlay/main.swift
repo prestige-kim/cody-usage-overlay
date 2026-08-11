@@ -22,6 +22,7 @@ final class SingleInstanceLock {
 }
 
 final class UsageView: NSView {
+    var onClose: (() -> Void)?
     var snapshot = UsageSnapshot() { didSet { needsDisplay = true; toolTip = tooltipText } }
     var warningThreshold = 30
     var criticalThreshold = 10
@@ -32,11 +33,31 @@ final class UsageView: NSView {
 
     override var isFlipped: Bool { true }
 
+    private var closeButtonRect: NSRect { NSRect(x: 7, y: 7, width: 14, height: 14) }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        if closeButtonRect.insetBy(dx: -3, dy: -3).contains(convert(event.locationInWindow, from: nil)) {
+            onClose?()
+            return
+        }
+        if window?.isMovableByWindowBackground == true {
+            window?.performDrag(with: event)
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         let path = NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 1), xRadius: 15, yRadius: 15)
         NSColor(calibratedWhite: 0.08, alpha: 0.88).setFill(); path.fill()
         NSColor(calibratedWhite: 1, alpha: 0.16).setStroke(); path.lineWidth = 1; path.stroke()
+
+        let closeCircle = NSBezierPath(ovalIn: closeButtonRect)
+        NSColor(calibratedWhite: 1, alpha: 0.18).setFill(); closeCircle.fill()
+        drawText("×", at: NSPoint(x: 9.2, y: 4.8), font: .systemFont(ofSize: 14, weight: .semibold), color: .white.withAlphaComponent(0.8))
 
         let context = snapshot.contextRemainingPercent.map { "Context \($0)%" } ?? "Context —"
         let limits: String
@@ -48,8 +69,8 @@ final class UsageView: NSView {
         let delayed = snapshot.freshness == .fresh ? "" : "  \(snapshot.freshness == .incompatible ? "호환성 확인 필요" : "지연됨")"
         let limitValues = [snapshot.fiveHourRemainingPercent, snapshot.weeklyRemainingPercent].compactMap { $0 }
         let limitFontSize: CGFloat = snapshot.fiveHourRemainingPercent == nil ? 16 : 14
-        drawText(limits, at: NSPoint(x: 16, y: 9), font: .boldSystemFont(ofSize: limitFontSize), color: color(for: limitValues.min()))
-        drawText(context + delayed, at: NSPoint(x: 16, y: 37), font: .systemFont(ofSize: 11, weight: .medium), color: .white.withAlphaComponent(0.78))
+        drawText(limits, at: NSPoint(x: 27, y: 9), font: .boldSystemFont(ofSize: limitFontSize), color: color(for: limitValues.min()))
+        drawText(context + delayed, at: NSPoint(x: 27, y: 37), font: .systemFont(ofSize: 11, weight: .medium), color: .white.withAlphaComponent(0.78))
         codexIcon?.draw(
             in: NSRect(x: 164, y: 13, width: 36, height: 36),
             from: .zero,
@@ -144,6 +165,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var alwaysOnTop = true
     private var config = OverlayConfig()
     private var manualPositionInitialized = false
+    private var visibility = OverlayVisibilityController()
+    private var lastPetWasVisible = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -166,6 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = true
         panel.ignoresMouseEvents = config.clickThrough
+        usageView.onClose = { [weak self] in self?.hideUntilPetReturns() }
         installMenu()
 
         coordinator.onUpdate { [weak self] snapshot in
@@ -195,9 +219,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationWillTerminate(_ notification: Notification) { coordinator.stop(); positionTimer?.invalidate() }
 
-    private func reposition() {
-        guard locator.chatGPTRunning() else { panel.orderOut(nil); return }
-        guard let layout = locator.anchorLayout() else {
+    private func reposition(forceFront: Bool = false) {
+        let layout = locator.anchorLayout()
+        let petIsVisible = layout != nil
+        lastPetWasVisible = petIsVisible
+        guard visibility.update(petIsVisible: petIsVisible) else {
+            if panel.isVisible { panel.orderOut(nil) }
+            return
+        }
+        guard let layout else {
             panel.isMovableByWindowBackground = true
             panel.ignoresMouseEvents = false
             if !manualPositionInitialized {
@@ -205,7 +235,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 manualPositionInitialized = true
             }
             panel.level = alwaysOnTop ? .floating : .normal
-            if !panel.isVisible { panel.orderFrontRegardless() }
+            if forceFront || !panel.isVisible { panel.orderFrontRegardless() }
             return
         }
         manualPositionInitialized = true
@@ -222,7 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         )
         panel.setFrameOrigin(NSPoint(x: x, y: y))
         panel.level = alwaysOnTop ? .floating : .normal
-        if !panel.isVisible { panel.orderFrontRegardless() }
+        if forceFront || !panel.isVisible { panel.orderFrontRegardless() }
     }
 
     private func placeManualWindowInitially() {
@@ -247,11 +277,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func refresh() { coordinator.forceRefresh() }
-    @objc private func repositionNow() { reposition() }
-    @objc private func spaceChanged() { reposition() }
+    @objc private func repositionNow() { reposition(forceFront: true) }
+    @objc private func spaceChanged() { reposition(forceFront: true) }
     @objc private func toggleTop(_ sender: NSMenuItem) { alwaysOnTop.toggle(); sender.state = alwaysOnTop ? .on : .off; reposition() }
     @objc private func copyDiagnostics() { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(coordinator.diagnostics(), forType: .string) }
     @objc private func quit() { NSApp.terminate(nil) }
+
+    private func hideUntilPetReturns() {
+        visibility.dismiss(petIsVisible: lastPetWasVisible)
+        panel.orderOut(nil)
+    }
 
     private func loadConfig() -> OverlayConfig {
         let url = FileManager.default.homeDirectoryForCurrentUser
