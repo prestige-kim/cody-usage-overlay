@@ -66,24 +66,33 @@ do {
     try expect(!hiddenWithoutPet.update(petIsVisible: false), "manual overlay remains hidden without pet")
     try expect(hiddenWithoutPet.update(petIsVisible: true), "manual overlay returns on next pet appearance")
 
-    for petHeight in [120.0, 200.0, 320.0] {
-        let panelHeight = 62.0
-        let origin = OverlayGeometry.panelOriginY(
-            petWindowMinY: 100,
-            petWindowHeight: petHeight,
-            panelHeight: panelHeight,
-            visibleScreenMinY: 0
-        )
-        let panelTop = origin + panelHeight
-        let expectedTop = 100 - OverlayGeometry.gapBelowPetControls
-        try expect(abs(panelTop - expectedTop) < 0.001, "overlay must sit below pet controls at every pet size")
-    }
-
-    let clampedOrigin = OverlayGeometry.panelOriginY(
-        petWindowMinY: 40,
-        petWindowHeight: 200,
+    let oppositeAbove = OverlayGeometry.oppositeActivityOriginY(
+        petCenterY: 500,
+        activityCenterY: 350,
+        lastActivityDistance: nil,
         panelHeight: 62,
-        visibleScreenMinY: 20
+        visibleScreenMinY: 0,
+        visibleScreenMaxY: 900
+    )
+    try expect(oppositeAbove == 619, "activity below pet must place overlay equally far above")
+
+    let oppositeBelow = OverlayGeometry.oppositeActivityOriginY(
+        petCenterY: 400,
+        activityCenterY: 550,
+        lastActivityDistance: nil,
+        panelHeight: 62,
+        visibleScreenMinY: 0,
+        visibleScreenMaxY: 900
+    )
+    try expect(oppositeBelow == 219, "activity above pet must place overlay equally far below")
+
+    let clampedOrigin = OverlayGeometry.oppositeActivityOriginY(
+        petCenterY: 40,
+        activityCenterY: 200,
+        lastActivityDistance: nil,
+        panelHeight: 62,
+        visibleScreenMinY: 20,
+        visibleScreenMaxY: 900
     )
     try expect(clampedOrigin == 24, "overlay must stay inside the visible screen")
 

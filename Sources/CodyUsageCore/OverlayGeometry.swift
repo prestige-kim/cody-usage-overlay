@@ -1,17 +1,28 @@
 import Foundation
 
 public enum OverlayGeometry {
-    /// The Codex pet window includes the built-in controls below the pet.
-    /// Keep the usage panel just below that complete interactive area.
-    public static let gapBelowPetControls = 4.0
-
-    public static func panelOriginY(
-        petWindowMinY: Double,
-        petWindowHeight: Double,
+    public static func oppositeActivityOriginY(
+        petCenterY: Double,
+        activityCenterY: Double?,
+        lastActivityDistance: Double?,
         panelHeight: Double,
-        visibleScreenMinY: Double
+        visibleScreenMinY: Double,
+        visibleScreenMaxY: Double
     ) -> Double {
-        let belowControlsY = petWindowMinY - panelHeight - gapBelowPetControls
-        return max(visibleScreenMinY + 4, belowControlsY)
+        let targetCenterY: Double
+        if let activityCenterY {
+            targetCenterY = 2 * petCenterY - activityCenterY
+        } else {
+            let distance = lastActivityDistance ?? panelHeight * 1.8
+            let screenCenterY = (visibleScreenMinY + visibleScreenMaxY) / 2
+            targetCenterY = petCenterY >= screenCenterY
+                ? petCenterY + distance
+                : petCenterY - distance
+        }
+        let unclamped = targetCenterY - panelHeight / 2
+        return min(
+            visibleScreenMaxY - panelHeight - 4,
+            max(visibleScreenMinY + 4, unclamped)
+        )
     }
 }

@@ -7,6 +7,21 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-08-11
+
+### Added
+
+- Add a close button that hides only the usage window and restores it when the Codex Pet is shown again.
+
+### Changed
+
+- Place the usage window opposite the Codex Pet activity notification and follow its dynamic above/below placement.
+
+### Fixed
+
+- Keep the overlay visible across temporary Codex process-detection failures and macOS Space changes.
+- Restart the app automatically after an abnormal exit while preserving intentional quits.
+
 ## [0.1.3] - 2026-08-11
 
 ### Fixed
@@ -47,7 +62,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.0...v0.1.1

@@ -107,8 +107,11 @@ final class OverlayPanel: NSPanel {
 final class WindowLocator {
     struct AnchorLayout {
         let pet: CGRect
+        let activity: CGRect?
+        let activityDistance: CGFloat?
     }
     private var petWindowID: CGWindowID?
+    private var lastActivityDistance: CGFloat?
 
     func chatGPTRunning() -> Bool {
         NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == "com.openai.codex" }
@@ -116,19 +119,24 @@ final class WindowLocator {
 
     func anchorLayout() -> AnchorLayout? {
         guard let info = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else { return nil }
-        let windows: [(rect: CGRect, layer: Int, id: CGWindowID)] = info.compactMap { row in
+        let windows: [(rect: CGRect, layer: Int, id: CGWindowID, name: String)] = info.compactMap { row in
             guard row[kCGWindowOwnerName as String] as? String == "ChatGPT",
                   let bounds = row[kCGWindowBounds as String] as? [String: Any],
                   let rect = CGRect(dictionaryRepresentation: bounds as CFDictionary),
                   let number = row[kCGWindowNumber as String] as? NSNumber else { return nil }
-            return (rect, row[kCGWindowLayer as String] as? Int ?? 0, CGWindowID(number.uint32Value))
+            return (
+                rect,
+                row[kCGWindowLayer as String] as? Int ?? 0,
+                CGWindowID(number.uint32Value),
+                row[kCGWindowName as String] as? String ?? ""
+            )
         }
         // Keep following the same Cody window while dragging. Codex creates a
         // temporary hit-area window during a drag, which must not replace it.
-        if let petWindowID, let tracked = windows.first(where: { $0.id == petWindowID }) {
-            return AnchorLayout(pet: cocoaCoordinates(tracked.rect))
-        }
-        let pet = windows
+        let pet = if let petWindowID, let tracked = windows.first(where: { $0.id == petWindowID }) {
+            tracked
+        } else {
+            windows
             .filter {
                 $0.rect.width >= 70 && $0.rect.width <= 320 &&
                 $0.rect.height >= 100 && $0.rect.height <= 400
@@ -140,10 +148,21 @@ final class WindowLocator {
                 if abs($0.rect.maxY - $1.rect.maxY) > 2 { return $0.rect.maxY < $1.rect.maxY }
                 return $0.rect.width * $0.rect.height < $1.rect.width * $1.rect.height
             }
+        }
         if let pet {
             petWindowID = pet.id
             let petFrame = cocoaCoordinates(pet.rect)
-            return AnchorLayout(pet: petFrame)
+            let activity = windows
+                .filter { $0.name == "Codex Pet Activity Stack Backing" }
+                .min {
+                    abs($0.rect.midX - pet.rect.midX) + abs($0.rect.midY - pet.rect.midY)
+                    < abs($1.rect.midX - pet.rect.midX) + abs($1.rect.midY - pet.rect.midY)
+                }
+                .map { cocoaCoordinates($0.rect) }
+            if let activity {
+                lastActivityDistance = abs(activity.midY - petFrame.midY)
+            }
+            return AnchorLayout(pet: petFrame, activity: activity, activityDistance: lastActivityDistance)
         }
         petWindowID = nil
         return nil
@@ -242,13 +261,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         panel.isMovableByWindowBackground = false
         panel.ignoresMouseEvents = config.clickThrough
         let anchor = layout.pet
-        let x = anchor.midX - panel.frame.width / 2 + config.offsetX
-        let screenMinY = NSScreen.screens.first(where: { $0.frame.intersects(anchor) })?.visibleFrame.minY ?? 0
-        let y = OverlayGeometry.panelOriginY(
-            petWindowMinY: anchor.minY,
-            petWindowHeight: anchor.height,
+        let screen = NSScreen.screens.first(where: { $0.frame.intersects(anchor) }) ?? NSScreen.main
+        let visibleFrame = screen?.visibleFrame ?? .zero
+        let x = (layout.activity?.midX ?? anchor.midX) - panel.frame.width / 2 + config.offsetX
+        let y = OverlayGeometry.oppositeActivityOriginY(
+            petCenterY: anchor.midY,
+            activityCenterY: layout.activity.map { Double($0.midY) },
+            lastActivityDistance: layout.activityDistance.map(Double.init),
             panelHeight: panel.frame.height,
-            visibleScreenMinY: screenMinY
+            visibleScreenMinY: visibleFrame.minY,
+            visibleScreenMaxY: visibleFrame.maxY
         )
         panel.setFrameOrigin(NSPoint(x: x, y: y))
         panel.level = alwaysOnTop ? .floating : .normal
