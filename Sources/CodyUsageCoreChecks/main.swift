@@ -55,6 +55,17 @@ do {
     let context = ContextUsage(threadId: "root", usedTokens: 25_000, modelContextWindow: 100_000, updatedAt: Date())
     try expect(context.remainingPercent == 75, "context calculation")
 
+    var visibility = OverlayVisibilityController()
+    visibility.dismiss(petIsVisible: true)
+    try expect(!visibility.update(petIsVisible: true), "dismissed overlay stays hidden while pet remains visible")
+    try expect(!visibility.update(petIsVisible: false), "dismissed overlay waits while pet is hidden")
+    try expect(visibility.update(petIsVisible: true), "overlay returns when pet is shown again")
+
+    var hiddenWithoutPet = OverlayVisibilityController()
+    hiddenWithoutPet.dismiss(petIsVisible: false)
+    try expect(!hiddenWithoutPet.update(petIsVisible: false), "manual overlay remains hidden without pet")
+    try expect(hiddenWithoutPet.update(petIsVisible: true), "manual overlay returns on next pet appearance")
+
     for petHeight in [120.0, 200.0, 320.0] {
         let panelHeight = 62.0
         let origin = OverlayGeometry.panelOriginY(

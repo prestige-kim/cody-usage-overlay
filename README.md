@@ -63,6 +63,7 @@ cd cody-usage-overlay
 
 - Codex Pet이 보이면 상태창이 Pet의 발 바로 아래에 고정됩니다.
 - Pet이 없으면 상태창을 드래그해 원하는 곳으로 이동할 수 있습니다.
+- 상태창 왼쪽 위의 **×**를 누르면 상태창만 숨길 수 있습니다. 다시 표시하려면 Codex에서 **펫 숨기기** 후 **펫 보이기**를 누르세요. 펫이 이미 숨겨진 상태에서 ×를 눌렀다면 **펫 보이기**만 누르면 됩니다.
 - 상태창을 우클릭하면 새로고침, 위치 재탐색, 항상 위, 진단 정보 복사, 종료 메뉴를 사용할 수 있습니다.
 - 설정은 `~/Library/Application Support/CodyUsageOverlay/config.json`에 저장됩니다.
 
@@ -93,6 +94,7 @@ cd cody-usage-overlay
 - 활성 Context는 가장 최근에 수정된 루트 Codex Desktop rollout을 기준으로 선택합니다.
 - 현재 빌드 대상은 Apple Silicon Mac뿐입니다.
 - Cody 창 탐지는 Codex Desktop의 창 동작이 바뀌면 영향을 받을 수 있습니다.
+- 앱이 비정상 종료되면 LaunchAgent가 자동으로 다시 실행합니다. **×**는 앱을 종료하지 않고 상태창만 숨깁니다.
 - Release 앱은 아직 Developer ID 서명 및 Apple 공증을 받지 않았습니다.
 
 Codex 업데이트 후 문제가 생기면 `./scripts/doctor.sh`를 실행하고 민감한 경로를 가린 결과와 함께 이슈를 등록해 주세요.
