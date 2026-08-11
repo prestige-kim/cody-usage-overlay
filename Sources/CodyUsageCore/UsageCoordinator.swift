@@ -81,6 +81,7 @@ public final class UsageCoordinator: @unchecked Sendable {
     private func applyContext(_ usage: ContextUsage) {
             snapshot.contextRemainingPercent = usage.remainingPercent
             snapshot.activeThreadId = usage.threadId
+            if let rateLimits = usage.rateLimits { mergeRateLimits(rateLimits) }
             lastContextUpdate = usage.updatedAt
             snapshot.lastUpdatedAt = Date()
             snapshot.freshness = .fresh
@@ -109,14 +110,7 @@ public final class UsageCoordinator: @unchecked Sendable {
         queue.async {
             do {
                 let result = try RateLimitParser.parse(data: raw)
-                if let five = result.fiveHour {
-                    self.snapshot.fiveHourRemainingPercent = five.remainingPercent
-                    self.snapshot.fiveHourResetsAt = five.resetsAt
-                }
-                if let weekly = result.weekly {
-                    self.snapshot.weeklyRemainingPercent = weekly.remainingPercent
-                    self.snapshot.weeklyResetsAt = weekly.resetsAt
-                }
+                self.mergeRateLimits(result)
                 self.lastRateLimitUpdate = Date()
                 self.snapshot.lastUpdatedAt = Date()
                 self.snapshot.freshness = .fresh
@@ -125,6 +119,35 @@ public final class UsageCoordinator: @unchecked Sendable {
             }
             self.publish()
         }
+    }
+
+    private func mergeRateLimits(_ result: RateLimitResult) {
+        if let five = result.fiveHour {
+            snapshot.fiveHourRemainingPercent = mergedRemaining(
+                current: snapshot.fiveHourRemainingPercent,
+                currentReset: snapshot.fiveHourResetsAt,
+                incoming: five
+            )
+            snapshot.fiveHourResetsAt = five.resetsAt
+        }
+        if let weekly = result.weekly {
+            snapshot.weeklyRemainingPercent = mergedRemaining(
+                current: snapshot.weeklyRemainingPercent,
+                currentReset: snapshot.weeklyResetsAt,
+                incoming: weekly
+            )
+            snapshot.weeklyResetsAt = weekly.resetsAt
+        }
+    }
+
+    private func mergedRemaining(current: Int?, currentReset: Date?, incoming: RateLimitWindow) -> Int {
+        guard let current,
+              let currentReset,
+              let incomingReset = incoming.resetsAt,
+              abs(currentReset.timeIntervalSince(incomingReset)) < 1 else {
+            return incoming.remainingPercent
+        }
+        return min(current, incoming.remainingPercent)
     }
 
     private func publish() { updateHandler?(snapshot) }

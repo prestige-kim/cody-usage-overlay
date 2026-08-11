@@ -76,7 +76,15 @@ public final class RolloutReader: @unchecked Sendable {
                   let last = info["last_token_usage"] as? [String: Any],
                   let total = (last["total_tokens"] as? NSNumber)?.intValue,
                   let window = (info["model_context_window"] as? NSNumber)?.intValue else { continue }
-            latest = ContextUsage(threadId: threadId, usedTokens: total, modelContextWindow: window, updatedAt: Date())
+            let rawLimits = payload["rate_limits"] as? [String: Any] ?? info["rate_limits"] as? [String: Any]
+            let rateLimits = rawLimits.flatMap { try? RateLimitParser.parse(["rateLimits": $0]) }
+            latest = ContextUsage(
+                threadId: threadId,
+                usedTokens: total,
+                modelContextWindow: window,
+                updatedAt: Date(),
+                rateLimits: rateLimits
+            )
         }
         return latest
     }

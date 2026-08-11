@@ -67,11 +67,13 @@ public struct ContextUsage: Equatable, Sendable {
     public let usedTokens: Int
     public let modelContextWindow: Int
     public let updatedAt: Date
-    public init(threadId: String, usedTokens: Int, modelContextWindow: Int, updatedAt: Date) {
+    public let rateLimits: RateLimitResult?
+    public init(threadId: String, usedTokens: Int, modelContextWindow: Int, updatedAt: Date, rateLimits: RateLimitResult? = nil) {
         self.threadId = threadId
         self.usedTokens = usedTokens
         self.modelContextWindow = modelContextWindow
         self.updatedAt = updatedAt
+        self.rateLimits = rateLimits
     }
     public var remainingPercent: Int {
         guard modelContextWindow > 0 else { return 0 }

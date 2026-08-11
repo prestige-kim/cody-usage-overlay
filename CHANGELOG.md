@@ -7,6 +7,14 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-11
+
+### Fixed
+
+- Prefer the canonical `codex` rate-limit bucket when model-specific buckets coexist.
+- Read snake-case rate-limit fields from Desktop rollout events.
+- Prevent a lagging zero-usage app-server snapshot from overwriting a newer value for the same reset window.
+
 ## [0.1.2] - 2026-08-10
 
 ### Fixed
@@ -39,7 +47,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/prestige-kim/cody-usage-overlay/releases/tag/v0.1.0

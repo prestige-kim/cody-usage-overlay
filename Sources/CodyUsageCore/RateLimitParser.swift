@@ -10,8 +10,12 @@ public enum RateLimitParser {
     public static func parse(_ value: Any) throws -> RateLimitResult {
         guard let root = value as? [String: Any] else { throw RateLimitParserError.invalidPayload }
         var snapshots: [[String: Any]] = []
-        if let single = root["rateLimits"] as? [String: Any] { snapshots.append(single) }
-        if let buckets = root["rateLimitsByLimitId"] as? [String: Any] {
+        if let buckets = root["rateLimitsByLimitId"] as? [String: Any],
+           let codex = buckets["codex"] as? [String: Any] {
+            snapshots.append(codex)
+        } else if let single = root["rateLimits"] as? [String: Any] {
+            snapshots.append(single)
+        } else if let buckets = root["rateLimitsByLimitId"] as? [String: Any] {
             snapshots.append(contentsOf: buckets.values.compactMap { $0 as? [String: Any] })
         }
 
@@ -19,7 +23,7 @@ public enum RateLimitParser {
         for snapshot in snapshots {
             for key in ["primary", "secondary"] {
                 guard let raw = snapshot[key] as? [String: Any],
-                      let used = integer(raw["usedPercent"]) else { continue }
+                      let used = integer(raw["usedPercent"] ?? raw["used_percent"]) else { continue }
                 let duration = integer(raw["windowDurationMins"] ?? raw["window_minutes"])
                 let resetSeconds = integer(raw["resetsAt"] ?? raw["resets_at"])
                 windows.append(RateLimitWindow(
