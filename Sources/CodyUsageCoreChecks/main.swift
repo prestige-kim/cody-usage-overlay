@@ -75,9 +75,17 @@ do {
             visibleScreenMinY: 0
         )
         let panelTop = origin + panelHeight
-        let feetY = 100 + petHeight * OverlayGeometry.spaceBelowFeetRatio
-        try expect(abs(panelTop - feetY - 2) < 0.001, "overlay must touch Cody's feet at every pet size")
+        let expectedTop = 100 - OverlayGeometry.gapBelowPetControls
+        try expect(abs(panelTop - expectedTop) < 0.001, "overlay must sit below pet controls at every pet size")
     }
+
+    let clampedOrigin = OverlayGeometry.panelOriginY(
+        petWindowMinY: 40,
+        petWindowHeight: 200,
+        panelHeight: 62,
+        visibleScreenMinY: 20
+    )
+    try expect(clampedOrigin == 24, "overlay must stay inside the visible screen")
 
     let tempRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
