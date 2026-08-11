@@ -88,14 +88,30 @@ public final class AppServerClient: @unchecked Sendable {
     }
 
     public static func locateExecutable() -> URL? {
-        let bundled = URL(fileURLWithPath: "/Applications/ChatGPT.app/Contents/Resources/codex")
-        if FileManager.default.isExecutableFile(atPath: bundled.path) { return bundled }
-        let environmentPath = ProcessInfo.processInfo.environment["PATH"] ?? ""
-        for directory in environmentPath.split(separator: ":") {
-            let candidate = URL(fileURLWithPath: String(directory)).appendingPathComponent("codex")
-            if FileManager.default.isExecutableFile(atPath: candidate.path) { return candidate }
+        candidateExecutableURLs().first { FileManager.default.isExecutableFile(atPath: $0.path) }
+    }
+
+    public static func candidateExecutableURLs(
+        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
+        environmentPath: String = ProcessInfo.processInfo.environment["PATH"] ?? ""
+    ) -> [URL] {
+        let appRoots = [URL(fileURLWithPath: "/Applications"), homeDirectory.appendingPathComponent("Applications")]
+        var candidates = appRoots.flatMap { root in
+            ["ChatGPT.app", "Codex.app"].map {
+                root.appendingPathComponent($0).appendingPathComponent("Contents/Resources/codex")
+            }
         }
-        return nil
+        candidates += [
+            homeDirectory.appendingPathComponent(".local/bin/codex"),
+            homeDirectory.appendingPathComponent(".codex/bin/codex"),
+            URL(fileURLWithPath: "/opt/homebrew/bin/codex"),
+            URL(fileURLWithPath: "/usr/local/bin/codex"),
+        ]
+        candidates += environmentPath.split(separator: ":").map {
+            URL(fileURLWithPath: String($0)).appendingPathComponent("codex")
+        }
+        var seen = Set<String>()
+        return candidates.filter { seen.insert($0.standardizedFileURL.path).inserted }
     }
 
     private func call(method: String, params: [String: Any], allowUninitialized: Bool = false) async throws -> Data {

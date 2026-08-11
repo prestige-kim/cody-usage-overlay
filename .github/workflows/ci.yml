@@ -50,6 +50,8 @@ jobs:
           ditto -x -k "$RUNNER_TEMP"/CodyUsageOverlay-*.zip "$RUNNER_TEMP/unpacked"
           test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/Install.command
           test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/Uninstall.command
+          test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/Doctor.command
+          test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/scripts/doctor.py
           test -x "$RUNNER_TEMP"/unpacked/CodyUsageOverlay-*-arm64/dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay
 
       - name: Upload CI artifact

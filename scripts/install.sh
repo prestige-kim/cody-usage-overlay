@@ -17,7 +17,7 @@ ditto "$APP_SOURCE" "$APP_DEST"
 xattr -cr "$APP_DEST"
 codesign --force --deep --sign - "$APP_DEST"
 if [[ ! -f "$CONFIG_DIR/config.json" ]]; then cp "$PROJECT_DIR/Resources/default-config.json" "$CONFIG_DIR/config.json"; fi
-sed -e "s|__APP_PATH__|$APP_DEST|g" -e "s|__LOG_DIR__|$LOG_DIR|g" \
+sed -e "s|__APP_PATH__|$APP_DEST|g" -e "s|__LOG_DIR__|$LOG_DIR|g" -e "s|__HOME_DIR__|$HOME|g" \
   "$PROJECT_DIR/Resources/com.proudchris.cody-usage-overlay.plist" > "$AGENT_FILE"
 launchctl bootstrap "gui/$UID" "$AGENT_FILE"
 launchctl kickstart -k "gui/$UID/com.proudchris.cody-usage-overlay"

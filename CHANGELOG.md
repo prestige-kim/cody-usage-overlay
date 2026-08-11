@@ -7,6 +7,24 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-08-11
+
+### Added
+
+- Include `Doctor.command` in release archives for post-install compatibility checks.
+- Search system and user application folders plus common Homebrew and user CLI paths for Codex.
+
+### Changed
+
+- Identify Codex windows by bundle process ID with flexible owner-name and activity-window fallbacks.
+- Convert Quartz coordinates using the primary display geometry for vertically arranged monitors.
+- Set the documented requirement to macOS 14 to match the current Codex-capable ChatGPT app.
+
+### Fixed
+
+- Prevent the doctor from waiting indefinitely when app-server does not respond.
+- Give the login LaunchAgent access to common Codex CLI locations.
+
 ## [0.1.4] - 2026-08-11
 
 ### Added
@@ -62,7 +80,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.1...v0.1.2
