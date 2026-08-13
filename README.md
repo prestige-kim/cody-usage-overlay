@@ -3,8 +3,8 @@
 [![CI](https://github.com/prestige-kim/cody-usage-overlay/actions/workflows/ci.yml/badge.svg)](https://github.com/prestige-kim/cody-usage-overlay/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/prestige-kim/cody-usage-overlay?include_prereleases)](https://github.com/prestige-kim/cody-usage-overlay/releases)
 
-Codex Desktop의 사용량을 Cody 펫 아래에 보여주는 macOS용 오버레이입니다.
-Cody가 화면에 있으면 발밑을 따라다니고, 펫을 숨기면 상태창을 마우스로 자유롭게 옮길 수 있습니다.
+Codex Desktop의 사용량을 Cody 펫 주변에 보여주는 macOS·Windows용 오버레이입니다.
+Cody가 화면에 있으면 작업 알림창의 반대편을 따라다니고, 펫을 숨기면 상태창을 마우스로 자유롭게 옮길 수 있습니다.
 
 > [!WARNING]
 > OpenAI가 공식 배포하거나 보증하는 앱이 아닙니다. 실험적인 로컬 Codex 인터페이스를 사용하므로 Codex 업데이트 후 일부 기능이 달라질 수 있습니다.
@@ -19,13 +19,12 @@ Cody가 화면에 있으면 발밑을 따라다니고, 펫을 숨기면 상태�
 
 ## 요구 사항
 
-- macOS 14 이상
-- Apple Silicon Mac (`arm64`)
+- macOS 14 이상 Apple Silicon (`arm64`), 또는 Windows 11 x64
 - 설치 및 로그인된 Codex Desktop
 
 ## 설치
 
-### GitHub Release에서 설치
+### macOS GitHub Release에서 설치
 
 1. [Releases](https://github.com/prestige-kim/cody-usage-overlay/releases)에서 최신 `CodyUsageOverlay-*.zip`을 받습니다.
 2. 압축을 풀고 폴더 안의 `Install.command`를 실행합니다.
@@ -37,7 +36,19 @@ Cody가 화면에 있으면 발밑을 따라다니고, 펫을 숨기면 상태�
 
 현재 배포 파일은 Developer ID 서명과 Apple 공증을 거치지 않은 시험판입니다. 다운로드한 파일은 함께 제공되는 `.sha256` 체크섬으로 확인할 수 있습니다.
 
-### 소스에서 설치
+### Windows 11
+
+PowerShell에서 다음 한 줄을 실행하면 최신 Windows x64 prerelease를 내려받아 `%LOCALAPPDATA%\CodyUsageOverlay`에 설치하고 즉시 실행합니다.
+
+```powershell
+irm https://raw.githubusercontent.com/prestige-kim/cody-usage-overlay/main/windows/scripts/install.ps1 | iex
+```
+
+또는 Releases의 `CodyUsageOverlay-*-windows-x64.zip`을 풀고 `install.ps1`을 실행할 수 있습니다. 로그인 자동 시작은 현재 사용자 레지스트리에 등록되며 관리자 권한은 필요하지 않습니다.
+
+Windows SmartScreen이 차단하면 파일 속성의 **차단 해제**를 선택하거나 현재 PowerShell 프로세스에만 `Set-ExecutionPolicy -Scope Process Bypass`를 적용하세요. 설치 후 진단은 Release 폴더의 `doctor.ps1`을 실행합니다.
+
+### macOS 소스에서 설치
 
 Swift 6와 Xcode Command Line Tools가 필요합니다.
 
@@ -61,6 +72,8 @@ cd cody-usage-overlay
 
 `--purge`를 사용하지 않으면 설정과 로그는 보존됩니다.
 
+Windows는 Release 폴더의 `uninstall.ps1`을 실행합니다. 설정까지 삭제하려면 `./uninstall.ps1 -Purge`를 사용합니다.
+
 ## 사용법
 
 - Codex Pet이 보이면 상태창은 작업 알림창의 반대편에 배치됩니다. 작업 알림이 Pet 위에 있으면 상태창은 아래로, 작업 알림이 아래에 있으면 상태창은 위로 이동합니다.
@@ -68,6 +81,7 @@ cd cody-usage-overlay
 - 상태창 왼쪽 위의 **×**를 누르면 상태창만 숨길 수 있습니다. 다시 표시하려면 Codex에서 **펫 숨기기** 후 **펫 보이기**를 누르세요. 펫이 이미 숨겨진 상태에서 ×를 눌렀다면 **펫 보이기**만 누르면 됩니다.
 - 상태창을 우클릭하면 새로고침, 위치 재탐색, 항상 위, 진단 정보 복사, 종료 메뉴를 사용할 수 있습니다.
 - 설정은 `~/Library/Application Support/CodyUsageOverlay/config.json`에 저장됩니다.
+- Windows 설정은 `%LOCALAPPDATA%\CodyUsageOverlayData\config.json`에 저장됩니다.
 
 ## 데이터 처리 방식
 
@@ -90,6 +104,8 @@ cd cody-usage-overlay
 
 `main` 브랜치와 Pull Request는 GitHub Actions에서 Apple Silicon macOS 빌드, 코어 검사, 앱 번들 및 ad-hoc 서명을 자동 검증합니다.
 
+Windows 코드는 `windows-latest`에서 .NET 8 빌드, 코어 검사, self-contained x64 패키징과 체크섬을 검증합니다.
+
 ### 문제 해결
 
 - 설치가 차단되면 `Install.command`를 Control-클릭하고 **열기**를 선택합니다.
@@ -102,8 +118,9 @@ cd cody-usage-overlay
 
 - Codex app-server와 rollout JSONL 형식은 안정성이 보장된 공개 API가 아닙니다.
 - 활성 Context는 가장 최근에 수정된 루트 Codex Desktop rollout을 기준으로 선택합니다.
-- 현재 빌드 대상은 Apple Silicon Mac뿐입니다.
+- 공개 빌드는 Apple Silicon macOS와 Windows 11 x64를 대상으로 합니다.
 - Cody 창 탐지는 Codex Desktop의 창 동작이 바뀌면 영향을 받을 수 있습니다.
+- Windows 펫 창 연동은 Windows 11 x64 Codex 실기기 검증 전까지 실험 기능입니다. 펫 창을 식별하지 못하면 상태창은 독립 드래그 모드로 동작합니다.
 - 앱이 비정상 종료되면 LaunchAgent가 자동으로 다시 실행합니다. **×**는 앱을 종료하지 않고 상태창만 숨깁니다.
 - Release 앱은 아직 Developer ID 서명 및 Apple 공증을 받지 않았습니다.
 

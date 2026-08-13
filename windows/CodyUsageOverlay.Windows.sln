@@ -1,0 +1,31 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodyUsageOverlay.Core", "src\CodyUsageOverlay.Core\CodyUsageOverlay.Core.csproj", "{3F3D9CAE-8179-45E8-A719-7EBB50C171A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodyUsageOverlay.App", "src\CodyUsageOverlay.App\CodyUsageOverlay.App.csproj", "{1B6CA731-C712-4967-A8FB-F2F8B9DC42B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodyUsageOverlay.Checks", "tests\CodyUsageOverlay.Checks\CodyUsageOverlay.Checks.csproj", "{795E95FD-1181-49F5-BA57-34D265FB6B68}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3F3D9CAE-8179-45E8-A719-7EBB50C171A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F3D9CAE-8179-45E8-A719-7EBB50C171A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F3D9CAE-8179-45E8-A719-7EBB50C171A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F3D9CAE-8179-45E8-A719-7EBB50C171A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B6CA731-C712-4967-A8FB-F2F8B9DC42B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B6CA731-C712-4967-A8FB-F2F8B9DC42B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B6CA731-C712-4967-A8FB-F2F8B9DC42B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B6CA731-C712-4967-A8FB-F2F8B9DC42B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{795E95FD-1181-49F5-BA57-34D265FB6B68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{795E95FD-1181-49F5-BA57-34D265FB6B68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{795E95FD-1181-49F5-BA57-34D265FB6B68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{795E95FD-1181-49F5-BA57-34D265FB6B68}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

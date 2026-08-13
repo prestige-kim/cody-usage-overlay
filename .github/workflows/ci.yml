@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-check:
+  macos:
     name: Build and check (Apple Silicon)
     runs-on: macos-15
     timeout-minutes: 20
@@ -61,5 +61,51 @@ jobs:
           path: |
             ${{ runner.temp }}/CodyUsageOverlay-*.zip
             ${{ runner.temp }}/CodyUsageOverlay-*.zip.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  windows:
+    name: Build and check (Windows x64)
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build Windows solution
+        run: dotnet build windows/CodyUsageOverlay.Windows.sln -c Release
+
+      - name: Run Windows core checks
+        run: dotnet run --project windows/tests/CodyUsageOverlay.Checks/CodyUsageOverlay.Checks.csproj -c Release --no-build
+
+      - name: Package Windows release
+        shell: pwsh
+        run: ./windows/scripts/package.ps1 -OutputDirectory "$env:RUNNER_TEMP"
+
+      - name: Validate Windows package
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem "$env:RUNNER_TEMP/CodyUsageOverlay-*-windows-x64.zip" | Select-Object -First 1
+          if (-not $archive) { throw 'Windows archive missing' }
+          $checksum = Get-Content "$($archive.FullName).sha256"
+          if (-not $checksum.StartsWith((Get-FileHash $archive.FullName -Algorithm SHA256).Hash.ToLowerInvariant())) { throw 'Checksum mismatch' }
+          Expand-Archive $archive.FullName "$env:RUNNER_TEMP/unpacked"
+          @('app/CodyUsageOverlay.exe','install.ps1','uninstall.ps1','doctor.ps1') | ForEach-Object {
+            if (-not (Test-Path (Join-Path "$env:RUNNER_TEMP/unpacked" $_))) { throw "Missing $_" }
+          }
+
+      - name: Upload Windows CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodyUsageOverlay-Windows-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/CodyUsageOverlay-*-windows-x64.zip
+            ${{ runner.temp }}/CodyUsageOverlay-*-windows-x64.zip.sha256
           if-no-files-found: error
           retention-days: 7

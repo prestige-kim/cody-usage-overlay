@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>CodyUsageOverlay</AssemblyName>
+    <RootNamespace>CodyUsageOverlay.App</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CodyUsageOverlay.Core\CodyUsageOverlay.Core.csproj" />
+    <Resource Include="..\..\..\..\Resources\codex-emoji.png" Link="Assets\codex-emoji.png" />
+  </ItemGroup>
+</Project>

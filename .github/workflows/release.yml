@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
@@ -15,52 +14,59 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Build GitHub Release
+  macos:
+    name: Package macOS
     runs-on: macos-15
-    timeout-minutes: 20
-
     steps:
-      - name: Check out source
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
-      - name: Resolve and validate version
-        id: version
-        env:
-          REQUESTED_TAG: ${{ inputs.tag || github.ref_name }}
+      - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.tag || github.ref }}" }
+      - name: Validate version and build
+        env: { RELEASE_TAG: "${{ inputs.tag || github.ref_name }}" }
         run: |
-          test "${REQUESTED_TAG#v}" != "$REQUESTED_TAG"
           app_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)
-          test "$REQUESTED_TAG" = "v$app_version"
-          echo "tag=$REQUESTED_TAG" >> "$GITHUB_OUTPUT"
+          test "$RELEASE_TAG" = "v$app_version"
+          ./scripts/check.sh
+          ./scripts/package-release.sh "$RUNNER_TEMP"
+          (cd "$RUNNER_TEMP" && shasum -a 256 -c CodyUsageOverlay-*-arm64.zip.sha256)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: ${{ runner.temp }}/CodyUsageOverlay-*-arm64.zip*
 
-      - name: Run core checks
-        run: ./scripts/check.sh
-
-      - name: Build app bundle
-        run: ./scripts/build.sh
-
-      - name: Validate app bundle
+  windows:
+    name: Package Windows x64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ inputs.tag || github.ref }}" }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: 8.0.x }
+      - name: Validate version and package
+        shell: pwsh
+        env: { RELEASE_TAG: "${{ inputs.tag || github.ref_name }}" }
         run: |
-          plutil -lint dist/CodyUsageOverlay.app/Contents/Info.plist
-          codesign --verify --deep --strict --verbose=2 dist/CodyUsageOverlay.app
-          file dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay | grep -q arm64
+          [xml]$props = Get-Content windows/Directory.Build.props
+          if ($env:RELEASE_TAG -ne "v$($props.Project.PropertyGroup.Version)") { throw 'Windows version does not match tag' }
+          dotnet run --project windows/tests/CodyUsageOverlay.Checks/CodyUsageOverlay.Checks.csproj -c Release
+          ./windows/scripts/package.ps1 -OutputDirectory "$env:RUNNER_TEMP"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: ${{ runner.temp }}/CodyUsageOverlay-*-windows-x64.zip*
 
-      - name: Package release assets
-        run: |
-          ./scripts/package-release.sh "$PWD"
-          shasum -a 256 -c CodyUsageOverlay-*.zip.sha256
-
-      - name: Publish GitHub Release
+  publish:
+    name: Publish GitHub Release
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: release-assets, merge-multiple: true }
+      - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_TAG: "${{ inputs.tag || github.ref_name }}"
         run: |
           prerelease=()
           if [[ "$RELEASE_TAG" == v0.* ]]; then prerelease+=(--prerelease); fi
-          gh release create "$RELEASE_TAG" \
-            CodyUsageOverlay-*.zip CodyUsageOverlay-*.zip.sha256 \
-            --verify-tag --generate-notes --title "Cody Usage Overlay $RELEASE_TAG" \
-            "${prerelease[@]}"
+          gh release create "$RELEASE_TAG" release-assets/* --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --generate-notes --title "Cody Usage Overlay $RELEASE_TAG" "${prerelease[@]}"
