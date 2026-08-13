@@ -95,6 +95,7 @@ jobs:
           if (-not $archive) { throw 'Windows archive missing' }
           $checksum = Get-Content "$($archive.FullName).sha256"
           if (-not $checksum.StartsWith((Get-FileHash $archive.FullName -Algorithm SHA256).Hash.ToLowerInvariant())) { throw 'Checksum mismatch' }
+          if ([IO.File]::ReadAllText("$($archive.FullName).sha256").Contains("`r")) { throw 'Checksum must use LF line endings' }
           Expand-Archive $archive.FullName "$env:RUNNER_TEMP/unpacked"
           @('app/CodyUsageOverlay.exe','install.ps1','uninstall.ps1','doctor.ps1') | ForEach-Object {
             if (-not (Test-Path (Join-Path "$env:RUNNER_TEMP/unpacked" $_))) { throw "Missing $_" }

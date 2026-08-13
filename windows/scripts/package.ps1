@@ -15,5 +15,5 @@ $archive = Join-Path $OutputDirectory "CodyUsageOverlay-$version-windows-x64.zip
 if (Test-Path $archive) { Remove-Item $archive -Force }
 Compress-Archive (Join-Path $stage '*') $archive -CompressionLevel Optimal
 $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-Set-Content "$archive.sha256" "$hash  $(Split-Path $archive -Leaf)" -Encoding ascii
+[IO.File]::WriteAllText("$archive.sha256", "$hash  $(Split-Path $archive -Leaf)`n", [Text.Encoding]::ASCII)
 Write-Host $archive
