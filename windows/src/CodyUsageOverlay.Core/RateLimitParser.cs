@@ -6,7 +6,7 @@ public static class RateLimitParser
 {
     public static RateLimitResult Parse(ReadOnlySpan<byte> json)
     {
-        using var document = JsonDocument.Parse(json);
+        using var document = JsonDocument.Parse(json.ToArray());
         return Parse(document.RootElement);
     }
 
