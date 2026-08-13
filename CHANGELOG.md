@@ -7,6 +7,17 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - Unreleased
+
+### Added
+
+- Add an experimental Windows 11 x64 WPF overlay with the same Week, optional 5h, and Context data pipeline.
+- Add Win32 pet/activity discovery, event-driven positioning, PowerShell management scripts, and Windows CI packaging.
+
+### Changed
+
+- Publish macOS and Windows packages from one shared versioned release workflow.
+
 ## [0.1.5] - 2026-08-11
 
 ### Added
@@ -80,7 +91,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.2...v0.1.3
