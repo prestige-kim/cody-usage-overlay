@@ -1,11 +1,12 @@
 using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json;
 
 namespace CodyUsageOverlay.Core;
 
 public sealed class RolloutSessionMonitor : ISessionMonitor
 {
-    private sealed class State { public long Offset; public bool IsDesktopRoot; public string? ThreadId; public ContextUsage? Usage; }
+    private sealed class State { public long Offset; public byte[] Pending = []; public bool IsDesktopRoot; public string? ThreadId; public ContextUsage? Usage; }
     private readonly string sessionsRoot;
     private readonly ConcurrentDictionary<string, State> states = new(StringComparer.OrdinalIgnoreCase);
     private FileSystemWatcher? watcher;
@@ -51,11 +52,24 @@ public sealed class RolloutSessionMonitor : ISessionMonitor
         try
         {
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            if (stream.Length < state.Offset) { state.Offset = 0; state.IsDesktopRoot = false; state.Usage = null; }
+            if (stream.Length < state.Offset) { state.Offset = 0; state.Pending = []; state.IsDesktopRoot = false; state.Usage = null; }
             stream.Position = state.Offset;
-            using var reader = new StreamReader(stream);
-            while (reader.ReadLine() is { } line) ParseLine(line, state, File.GetLastWriteTimeUtc(path));
-            state.Offset = stream.Position;
+            using var memory = new MemoryStream();
+            stream.CopyTo(memory);
+            state.Offset = stream.Length;
+            var appended = memory.ToArray();
+            var bytes = new byte[state.Pending.Length + appended.Length];
+            state.Pending.CopyTo(bytes, 0); appended.CopyTo(bytes, state.Pending.Length);
+            var lineStart = 0;
+            for (var index = 0; index < bytes.Length; index++)
+            {
+                if (bytes[index] != (byte)'\n') continue;
+                var length = index - lineStart;
+                if (length > 0 && bytes[index - 1] == (byte)'\r') length--;
+                if (length > 0) ParseLine(Encoding.UTF8.GetString(bytes, lineStart, length), state, File.GetLastWriteTimeUtc(path));
+                lineStart = index + 1;
+            }
+            state.Pending = lineStart < bytes.Length ? bytes[lineStart..] : [];
         }
         catch (IOException) { }
     }

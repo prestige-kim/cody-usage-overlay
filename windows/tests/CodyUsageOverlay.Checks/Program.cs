@@ -46,7 +46,10 @@ var checks = new List<(string Name, Action Run)>
         ]);
         using var monitor = new RolloutSessionMonitor(root);
         Equal(80, monitor.Refresh()?.RemainingPercent);
-        File.AppendAllText(rollout, Environment.NewLine + "{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"last_token_usage\":{\"total_tokens\":30},\"model_context_window\":100}}");
+        var next = "{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"last_token_usage\":{\"total_tokens\":30},\"model_context_window\":100}}";
+        File.AppendAllText(rollout, Environment.NewLine + next[..40]);
+        Equal(80, monitor.Refresh()?.RemainingPercent);
+        File.AppendAllText(rollout, next[40..] + Environment.NewLine);
         Equal(70, monitor.Refresh()?.RemainingPercent);
         Directory.Delete(root, true);
     })
