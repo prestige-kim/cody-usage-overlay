@@ -26,15 +26,63 @@ public static class CodyWindowProbe {
 }
 '@
 $homeDir = [Environment]::GetFolderPath('UserProfile')
-$candidates = @(
-    (Get-Command codex.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source),
-    "$env:LOCALAPPDATA\Programs\Codex\codex.exe", "$env:LOCALAPPDATA\Codex\codex.exe",
+$candidateList = [Collections.Generic.List[string]]::new()
+function Add-CodexCandidate([string]$Path) {
+    if ([string]::IsNullOrWhiteSpace($Path)) { return }
+    try { $fullPath = [IO.Path]::GetFullPath([Environment]::ExpandEnvironmentVariables($Path)) } catch { return }
+    if (-not $candidateList.Contains($fullPath)) { $candidateList.Add($fullPath) }
+}
+function Add-AppDirectoryCandidates([string]$Directory) {
+    if ([string]::IsNullOrWhiteSpace($Directory)) { return }
+    Add-CodexCandidate (Join-Path $Directory 'codex.exe')
+    Add-CodexCandidate (Join-Path $Directory 'resources\codex.exe')
+    Add-CodexCandidate (Join-Path $Directory 'resources\app\codex.exe')
+    Add-CodexCandidate (Join-Path $Directory 'resources\bin\codex.exe')
+    Add-CodexCandidate (Join-Path $Directory 'bin\codex.exe')
+}
+function Add-StorePackageCandidates([string]$Root) {
+    if ([string]::IsNullOrWhiteSpace($Root)) { return }
+    Add-AppDirectoryCandidates $Root
+    Add-AppDirectoryCandidates (Join-Path $Root 'app')
+    Get-ChildItem $Root -Filter codex.exe -File -Recurse -ErrorAction SilentlyContinue |
+        Select-Object -First 16 -ExpandProperty FullName | ForEach-Object { Add-CodexCandidate $_ }
+}
+
+$desktopProcesses = @(Get-Process Codex,ChatGPT -ErrorAction SilentlyContinue)
+$processPaths = @($desktopProcesses | ForEach-Object { try { $_.Path } catch {} } | Where-Object { $_ })
+try {
+    $processPaths += @(Get-CimInstance Win32_Process -ErrorAction Stop |
+        Where-Object { $_.Name -in @('codex.exe', 'ChatGPT.exe') } |
+        Select-Object -ExpandProperty ExecutablePath | Where-Object { $_ })
+} catch {}
+$processPaths = @($processPaths | Select-Object -Unique)
+foreach ($processPath in $processPaths) {
+    if ([IO.Path]::GetFileName($processPath) -ieq 'codex.exe') { Add-CodexCandidate $processPath; continue }
+    if ([IO.Path]::GetFileName($processPath) -ine 'ChatGPT.exe') { continue }
+    $appDirectory = Split-Path $processPath -Parent
+    Add-AppDirectoryCandidates $appDirectory
+    if ((Split-Path $appDirectory -Leaf) -ieq 'app') { Add-StorePackageCandidates (Split-Path $appDirectory -Parent) }
+}
+
+$storePackages = @()
+foreach ($packageName in @('OpenAI.Codex', 'OpenAI.ChatGPT')) {
+    try { $storePackages += @(Get-AppxPackage -Name $packageName -ErrorAction SilentlyContinue) } catch {}
+}
+foreach ($package in $storePackages) { Add-StorePackageCandidates $package.InstallLocation }
+
+Add-CodexCandidate (Get-Command codex.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source)
+@(
+    "$env:LOCALAPPDATA\Programs\ChatGPT\resources\codex.exe",
+    "$env:LOCALAPPDATA\Programs\Codex\resources\codex.exe", "$env:LOCALAPPDATA\Programs\Codex\codex.exe",
+    "$env:LOCALAPPDATA\Codex\codex.exe", "$env:LOCALAPPDATA\Microsoft\WindowsApps\codex.exe",
     "$env:ProgramFiles\Codex\codex.exe", "$homeDir\.local\bin\codex.exe", "$homeDir\.codex\bin\codex.exe"
-) | Where-Object { $_ } | Select-Object -Unique
-$codex = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+) | ForEach-Object { Add-CodexCandidate $_ }
+$candidates = @($candidateList)
+$foundCodex = $candidates | Where-Object { Test-Path $_ -PathType Leaf } | Select-Object -First 1
+$codex = if ($foundCodex) { [string]$foundCodex } else { $null }
 $sessions = Join-Path $homeDir '.codex\sessions'
 $rollout = if (Test-Path $sessions) { Get-ChildItem $sessions -Filter '*.jsonl' -Recurse -ErrorAction SilentlyContinue | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1 -ExpandProperty FullName }
-$processes = @(Get-Process Codex,ChatGPT -ErrorAction SilentlyContinue)
+$processes = $desktopProcesses
 $windowRows = if ($processes.Count) { [CodyWindowProbe]::Enumerate([int[]]@($processes.Id)) } else { @() }
 $result = [ordered]@{
     ok = [bool]$codex
@@ -42,6 +90,8 @@ $result = [ordered]@{
     architecture = [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
     codex = $codex
     searchedCodexPaths = @($candidates)
+    desktopProcessPaths = @($processPaths)
+    storePackages = @($storePackages | ForEach-Object { @{ name = $_.Name; version = $_.Version.ToString(); installLocation = $_.InstallLocation } })
     codexVersion = $null
     appServer = $false
     rateLimitFields = @()
@@ -57,7 +107,7 @@ if ($codex) {
     $server = [Diagnostics.Process]::new(); $server.StartInfo = $psi
     try {
         [void]$server.Start()
-        $server.StandardInput.WriteLine('{"id":1,"method":"initialize","params":{"clientInfo":{"name":"cody-usage-overlay-doctor","title":"Cody Usage Overlay Doctor","version":"0.2.0"},"capabilities":{"experimentalApi":true}}}')
+        $server.StandardInput.WriteLine('{"id":1,"method":"initialize","params":{"clientInfo":{"name":"cody-usage-overlay-doctor","title":"Cody Usage Overlay Doctor","version":"0.2.1"},"capabilities":{"experimentalApi":true}}}')
         $server.StandardInput.Flush(); $initialize = $server.StandardOutput.ReadLineAsync()
         if ($initialize.Wait(15000) -and $initialize.Result) {
             $server.StandardInput.WriteLine('{"method":"initialized","params":{}}')

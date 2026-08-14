@@ -2,6 +2,7 @@
 import json
 import os
 import pathlib
+import plistlib
 import queue
 import subprocess
 import sys
@@ -13,6 +14,17 @@ def codex_candidates():
     for root in (pathlib.Path("/Applications"), home / "Applications"):
         for app in ("ChatGPT.app", "Codex.app"):
             candidates.append(root / app / "Contents/Resources/codex")
+        try:
+            for app in root.glob("*.app"):
+                try:
+                    with (app / "Contents/Info.plist").open("rb") as stream:
+                        bundle_id = plistlib.load(stream).get("CFBundleIdentifier", "").lower()
+                    if bundle_id in {"com.openai.codex", "com.openai.chat", "com.openai.chatgpt"}:
+                        candidates.append(app / "Contents/Resources/codex")
+                except (OSError, plistlib.InvalidFileException):
+                    pass
+        except OSError:
+            pass
     candidates += [
         home / ".local/bin/codex",
         home / ".codex/bin/codex",

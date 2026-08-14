@@ -7,6 +7,17 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] - Unreleased
+
+### Added
+
+- Discover the bundled Codex executable in the unified ChatGPT desktop app installed from the macOS App Store or Microsoft Store/MSIX.
+- Report Store package locations and desktop process executable paths in the Windows doctor output.
+
+### Changed
+
+- Preserve legacy standalone Codex and CLI lookup paths as fallbacks after process and Store package discovery.
+
 ## [0.2.0] - Unreleased
 
 ### Added
@@ -91,7 +102,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.3...v0.1.4

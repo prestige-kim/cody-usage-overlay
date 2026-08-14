@@ -60,7 +60,7 @@ public final class AppServerClient: @unchecked Sendable {
         _ = try await call(
             method: "initialize",
             params: [
-                "clientInfo": ["name": "cody-usage-overlay", "title": "Cody Usage Overlay", "version": "1.0.0"],
+                "clientInfo": ["name": "cody-usage-overlay", "title": "Cody Usage Overlay", "version": "0.2.1"],
                 "capabilities": ["experimentalApi": true],
             ],
             allowUninitialized: true
@@ -93,12 +93,33 @@ public final class AppServerClient: @unchecked Sendable {
 
     public static func candidateExecutableURLs(
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
-        environmentPath: String = ProcessInfo.processInfo.environment["PATH"] ?? ""
+        environmentPath: String = ProcessInfo.processInfo.environment["PATH"] ?? "",
+        applicationRoots: [URL]? = nil
     ) -> [URL] {
-        let appRoots = [URL(fileURLWithPath: "/Applications"), homeDirectory.appendingPathComponent("Applications")]
+        let appRoots = applicationRoots ?? [URL(fileURLWithPath: "/Applications"), homeDirectory.appendingPathComponent("Applications")]
         var candidates = appRoots.flatMap { root in
             ["ChatGPT.app", "Codex.app"].map {
                 root.appendingPathComponent($0).appendingPathComponent("Contents/Resources/codex")
+            }
+        }
+        // App Store apps still normally live in /Applications, but discover the
+        // bundle by identifier too so a renamed ChatGPT/Codex app keeps working.
+        let openAIBundleIdentifiers = Set(["com.openai.codex", "com.openai.chat", "com.openai.chatgpt"])
+        for root in appRoots {
+            guard let appURLs = try? FileManager.default.contentsOfDirectory(
+                at: root,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            ) else { continue }
+            for appURL in appURLs where appURL.pathExtension.lowercased() == "app" {
+                let infoURL = appURL.appendingPathComponent("Contents/Info.plist")
+                guard
+                    let infoData = try? Data(contentsOf: infoURL),
+                    let info = try? PropertyListSerialization.propertyList(from: infoData, format: nil) as? [String: Any],
+                    let identifier = info["CFBundleIdentifier"] as? String,
+                    openAIBundleIdentifiers.contains(identifier.lowercased())
+                else { continue }
+                candidates.append(appURL.appendingPathComponent("Contents/Resources/codex"))
             }
         }
         candidates += [

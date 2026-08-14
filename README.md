@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/prestige-kim/cody-usage-overlay?include_prereleases)](https://github.com/prestige-kim/cody-usage-overlay/releases)
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-blue)](https://github.com/prestige-kim/cody-usage-overlay/releases)
 
-Codex Desktop의 사용량을 Cody 펫 주변에 표시하는 macOS·Windows용 데스크톱 오버레이입니다.
+새 ChatGPT 데스크톱 앱의 Codex 모드(기존 Codex Desktop 포함) 사용량을 Cody 펫 주변에 표시하는 macOS·Windows용 오버레이입니다.
 
 - 계정의 **주간(Week) 사용 가능량** 표시
 - Codex가 제공할 때만 **5시간(5h) 사용 가능량** 표시
@@ -33,7 +33,9 @@ Codex Desktop의 사용량을 Cody 펫 주변에 표시하는 macOS·Windows용 
 | macOS | macOS 14 이상, Apple Silicon (`arm64`) | `.app`이 포함된 ZIP |
 | Windows | Windows 11, x64 | .NET 8 self-contained 실행 파일이 포함된 ZIP |
 
-두 플랫폼 모두 설치 및 로그인된 Codex Desktop이 필요합니다. Intel Mac, Windows 10, Windows ARM64는 현재 공개 빌드에서 지원하지 않습니다.
+두 플랫폼 모두 설치 및 로그인된 Codex 모드가 포함된 ChatGPT Desktop(기존 Codex Desktop 포함)이 필요합니다. macOS App Store와 Microsoft Store/MSIX 설치판, 기존 독립 설치판 및 일반 CLI 경로를 모두 탐색합니다. Intel Mac, Windows 10, Windows ARM64는 현재 공개 빌드에서 지원하지 않습니다.
+
+새 통합 앱의 구성은 [OpenAI의 ChatGPT 데스크톱 앱 전환 안내](https://help.openai.com/en/articles/20001276/)를 참고하세요.
 
 ## 설치
 
@@ -128,7 +130,7 @@ Release 폴더에서 다음 명령을 실행합니다.
 ### Windows
 
 - Release 폴더에서 `./doctor.ps1`을 실행합니다.
-- 진단 결과에는 Windows·아키텍처, Codex 실행 파일과 버전, app-server 응답, rollout 경로, Codex 프로세스 및 HWND 정보가 포함됩니다.
+- 진단 결과에는 Windows·아키텍처, Codex 실행 파일과 버전, Microsoft Store 패키지 위치, ChatGPT/Codex 프로세스 경로, app-server 응답, rollout 경로 및 HWND 정보가 포함됩니다.
 - Cody를 찾지 못해도 앱은 종료되지 않고 독립 드래그 모드로 동작합니다.
 - 문제를 제보할 때에는 사용자 이름 등 민감한 경로를 가린 진단 결과를 첨부해 주세요.
 
