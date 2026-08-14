@@ -65,6 +65,29 @@ do {
     try expect(executableCandidates.contains("/custom/bin/codex"), "PATH CLI candidate")
     try expect(executableCandidates.filter { $0 == "/opt/homebrew/bin/codex" }.count == 1, "candidate paths must be deduplicated")
 
+    let appStoreRoot = FileManager.default.temporaryDirectory
+        .resolvingSymlinksInPath()
+        .appendingPathComponent("cody-app-store-check-\(UUID().uuidString)")
+    let renamedApp = appStoreRoot.appendingPathComponent("OpenAI Desktop.app")
+    let contents = renamedApp.appendingPathComponent("Contents")
+    try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+    let info = try PropertyListSerialization.data(
+        fromPropertyList: ["CFBundleIdentifier": "com.openai.codex"],
+        format: .xml,
+        options: 0
+    )
+    try info.write(to: contents.appendingPathComponent("Info.plist"))
+    defer { try? FileManager.default.removeItem(at: appStoreRoot) }
+    let appStoreCandidates = AppServerClient.candidateExecutableURLs(
+        homeDirectory: URL(fileURLWithPath: "/Users/tester"),
+        environmentPath: "",
+        applicationRoots: [appStoreRoot]
+    ).map(\.path)
+    try expect(
+        appStoreCandidates.contains { $0.hasSuffix("/OpenAI Desktop.app/Contents/Resources/codex") },
+        "App Store bundle identifier candidate"
+    )
+
     var visibility = OverlayVisibilityController()
     visibility.dismiss(petIsVisible: true)
     try expect(!visibility.update(petIsVisible: true), "dismissed overlay stays hidden while pet remains visible")

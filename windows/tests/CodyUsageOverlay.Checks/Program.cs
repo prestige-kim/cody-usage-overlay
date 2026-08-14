@@ -27,6 +27,31 @@ var checks = new List<(string Name, Action Run)>
         Equal(75, new ContextUsage("a", 25, 100, DateTimeOffset.Now).RemainingPercent);
         Equal(0, new ContextUsage("a", 200, 100, DateTimeOffset.Now).RemainingPercent);
     }),
+    ("Store ChatGPT process resolves bundled Codex", () =>
+    {
+        var root = Path.Combine(Path.GetTempPath(), "cody-store-check-" + Guid.NewGuid());
+        var app = Path.Combine(root, "app");
+        var bundledCodex = Path.Combine(app, "resources", "codex.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(bundledCodex)!);
+        File.WriteAllText(bundledCodex, "fixture");
+        var locator = new CodexExecutableLocator(
+            processExecutablePaths: () => [Path.Combine(app, "ChatGPT.exe")],
+            storePackageRoots: () => []);
+        Equal(Path.GetFullPath(bundledCodex), locator.Locate());
+        Directory.Delete(root, true);
+    }),
+    ("Store package fallback searches unknown layout", () =>
+    {
+        var root = Path.Combine(Path.GetTempPath(), "cody-store-check-" + Guid.NewGuid());
+        var bundledCodex = Path.Combine(root, "app", "runtime", "tools", "codex.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(bundledCodex)!);
+        File.WriteAllText(bundledCodex, "fixture");
+        var locator = new CodexExecutableLocator(
+            processExecutablePaths: () => [],
+            storePackageRoots: () => [root]);
+        Equal(Path.GetFullPath(bundledCodex), locator.Locate());
+        Directory.Delete(root, true);
+    }),
     ("overlay mirrors activity", () =>
     {
         var below = OverlayGeometry.OppositeActivity(new AnchorLayout(new NativeRect(400, 300, 600, 500), new NativeRect(300, 100, 700, 200), new NativeRect(0, 0, 1920, 1040)), 242, 62);
