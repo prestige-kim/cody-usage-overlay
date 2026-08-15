@@ -7,16 +7,22 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Document the unified ChatGPT desktop app as the required desktop client.
+- Remove legacy standalone Codex desktop application paths while retaining the official Codex CLI as a fallback.
+- Correct the macOS installation guidance to use OpenAI's current direct download; Windows continues to use Microsoft Store/MSIX discovery.
+
 ## [0.2.1] - Unreleased
 
 ### Added
 
-- Discover the bundled Codex executable in the unified ChatGPT desktop app installed from the macOS App Store or Microsoft Store/MSIX.
+- Discover the bundled Codex executable in the unified ChatGPT desktop app and Microsoft Store/MSIX package.
 - Report Store package locations and desktop process executable paths in the Windows doctor output.
 
 ### Changed
 
-- Preserve legacy standalone Codex and CLI lookup paths as fallbacks after process and Store package discovery.
+- Preserve standalone CLI lookup paths as fallbacks after process and Store package discovery.
 
 ## [0.2.0] - Unreleased
 

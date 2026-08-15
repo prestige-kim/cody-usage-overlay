@@ -12,8 +12,7 @@ def codex_candidates():
     home = pathlib.Path.home()
     candidates = []
     for root in (pathlib.Path("/Applications"), home / "Applications"):
-        for app in ("ChatGPT.app", "Codex.app"):
-            candidates.append(root / app / "Contents/Resources/codex")
+        candidates.append(root / "ChatGPT.app" / "Contents/Resources/codex")
         try:
             for app in root.glob("*.app"):
                 try:
