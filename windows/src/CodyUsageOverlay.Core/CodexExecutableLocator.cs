@@ -36,16 +36,9 @@ public sealed class CodexExecutableLocator : ICodexExecutableLocator
         foreach (var packageRoot in SafeRead(storePackageRoots))
             AddStorePackageCandidates(packageRoot);
 
-        // Preserve all pre-Store installation and standalone CLI locations.
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        // Keep the separately supported Codex CLI as a fallback. Legacy
+        // standalone Codex desktop installation paths are intentionally omitted.
         var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        Add(Path.Combine(localAppData, "Programs", "ChatGPT", "resources", "codex.exe"));
-        Add(Path.Combine(localAppData, "Programs", "Codex", "resources", "codex.exe"));
-        Add(Path.Combine(localAppData, "Programs", "Codex", "codex.exe"));
-        Add(Path.Combine(localAppData, "Codex", "codex.exe"));
-        Add(Path.Combine(localAppData, "Microsoft", "WindowsApps", "codex.exe"));
-        Add(Path.Combine(programFiles, "Codex", "codex.exe"));
         Add(Path.Combine(userProfile, ".local", "bin", "codex.exe"));
         Add(Path.Combine(userProfile, ".codex", "bin", "codex.exe"));
         foreach (var directory in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))

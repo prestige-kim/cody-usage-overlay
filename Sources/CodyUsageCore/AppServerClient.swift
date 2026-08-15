@@ -97,13 +97,11 @@ public final class AppServerClient: @unchecked Sendable {
         applicationRoots: [URL]? = nil
     ) -> [URL] {
         let appRoots = applicationRoots ?? [URL(fileURLWithPath: "/Applications"), homeDirectory.appendingPathComponent("Applications")]
-        var candidates = appRoots.flatMap { root in
-            ["ChatGPT.app", "Codex.app"].map {
-                root.appendingPathComponent($0).appendingPathComponent("Contents/Resources/codex")
-            }
+        var candidates = appRoots.map { root in
+            root.appendingPathComponent("ChatGPT.app").appendingPathComponent("Contents/Resources/codex")
         }
-        // App Store apps still normally live in /Applications, but discover the
-        // bundle by identifier too so a renamed ChatGPT/Codex app keeps working.
+        // Discover the unified ChatGPT desktop bundle by identifier too so a
+        // renamed app keeps working. The current app still uses a Codex bundle ID.
         let openAIBundleIdentifiers = Set(["com.openai.codex", "com.openai.chat", "com.openai.chatgpt"])
         for root in appRoots {
             guard let appURLs = try? FileManager.default.contentsOfDirectory(

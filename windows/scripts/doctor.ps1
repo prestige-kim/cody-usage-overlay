@@ -72,10 +72,7 @@ foreach ($package in $storePackages) { Add-StorePackageCandidates $package.Insta
 
 Add-CodexCandidate (Get-Command codex.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source)
 @(
-    "$env:LOCALAPPDATA\Programs\ChatGPT\resources\codex.exe",
-    "$env:LOCALAPPDATA\Programs\Codex\resources\codex.exe", "$env:LOCALAPPDATA\Programs\Codex\codex.exe",
-    "$env:LOCALAPPDATA\Codex\codex.exe", "$env:LOCALAPPDATA\Microsoft\WindowsApps\codex.exe",
-    "$env:ProgramFiles\Codex\codex.exe", "$homeDir\.local\bin\codex.exe", "$homeDir\.codex\bin\codex.exe"
+    "$homeDir\.local\bin\codex.exe", "$homeDir\.codex\bin\codex.exe"
 ) | ForEach-Object { Add-CodexCandidate $_ }
 $candidates = @($candidateList)
 $foundCodex = $candidates | Where-Object { Test-Path $_ -PathType Leaf } | Select-Object -First 1

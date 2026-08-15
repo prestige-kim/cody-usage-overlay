@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/prestige-kim/cody-usage-overlay?include_prereleases)](https://github.com/prestige-kim/cody-usage-overlay/releases)
 [![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-blue)](https://github.com/prestige-kim/cody-usage-overlay/releases)
 
-새 ChatGPT 데스크톱 앱의 Codex 모드(기존 Codex Desktop 포함) 사용량을 Cody 펫 주변에 표시하는 macOS·Windows용 오버레이입니다.
+ChatGPT 데스크톱 앱의 Codex 모드 사용량을 Cody 펫 주변에 표시하는 macOS·Windows용 오버레이입니다.
 
 - 계정의 **주간(Week) 사용 가능량** 표시
 - Codex가 제공할 때만 **5시간(5h) 사용 가능량** 표시
@@ -22,7 +22,7 @@
 | --- | --- |
 | **Week** | 주간 사용 한도에서 현재 남아 있는 비율 |
 | **5h** | 5시간 사용 한도가 제공될 때 남아 있는 비율. 값이 없으면 자동으로 숨김 |
-| **Context** | 가장 최근에 활동한 Codex Desktop 작업의 컨텍스트 창 추정 잔여율 |
+| **Context** | 가장 최근에 활동한 ChatGPT 데스크톱 앱 Codex 작업의 컨텍스트 창 추정 잔여율 |
 
 `Context 100%`는 현재 작업의 컨텍스트가 거의 비어 있다는 뜻입니다. `0%`에 가까워질수록 대화가 모델의 컨텍스트 한도에 가까워집니다. Context는 계정의 Week·5h 사용 한도와 별개의 값입니다.
 
@@ -33,9 +33,10 @@
 | macOS | macOS 14 이상, Apple Silicon (`arm64`) | `.app`이 포함된 ZIP |
 | Windows | Windows 11, x64 | .NET 8 self-contained 실행 파일이 포함된 ZIP |
 
-두 플랫폼 모두 설치 및 로그인된 Codex 모드가 포함된 ChatGPT Desktop(기존 Codex Desktop 포함)이 필요합니다. macOS App Store와 Microsoft Store/MSIX 설치판, 기존 독립 설치판 및 일반 CLI 경로를 모두 탐색합니다. Intel Mac, Windows 10, Windows ARM64는 현재 공개 빌드에서 지원하지 않습니다.
+두 플랫폼 모두 Codex 모드가 포함된 ChatGPT 데스크톱 앱을 설치하고 로그인해야 합니다. macOS는 OpenAI가 제공하는 공식 다운로드로, Windows는 Microsoft Store로 설치합니다. 앱은 ChatGPT 앱에 번들된 Codex 실행 파일을 우선 탐색하고, 공식 Codex CLI 경로를 예비 경로로 사용합니다. Intel Mac, Windows 10, Windows ARM64는 현재 공개 빌드에서 지원하지 않습니다.
 
-새 통합 앱의 구성은 [OpenAI의 ChatGPT 데스크톱 앱 전환 안내](https://help.openai.com/en/articles/20001276/)를 참고하세요.
+- [OpenAI 공식 ChatGPT 데스크톱 앱 안내](https://learn.chatgpt.com/docs/app)
+- [OpenAI 공식 Windows 설치 안내](https://learn.chatgpt.com/docs/windows/windows-app)
 
 ## 설치
 
@@ -108,10 +109,10 @@ Release 폴더에서 다음 명령을 실행합니다.
 
 ## 작동 방식과 개인정보
 
-앱은 로컬 `codex app-server --stdio` 프로세스에 JSONL-RPC로 연결해 `account/rateLimits/read`와 사용량 갱신 알림을 읽습니다. Context 값은 사용자 홈의 `.codex/sessions`에 기록된 Codex Desktop 토큰 이벤트에서 계산합니다.
+앱은 로컬 `codex app-server --stdio` 프로세스에 JSONL-RPC로 연결해 `account/rateLimits/read`와 사용량 갱신 알림을 읽습니다. Context 값은 사용자 홈의 `.codex/sessions`에 기록된 ChatGPT 데스크톱 앱 Codex 토큰 이벤트에서 계산합니다.
 
 - OpenAI API 키가 필요하지 않습니다.
-- 기존 Codex 로그인을 그대로 사용합니다.
+- ChatGPT 데스크톱 앱의 기존 로그인을 그대로 사용합니다.
 - 로그인 토큰과 대화 본문을 읽거나 저장하지 않습니다.
 - 사용량 숫자를 디스크에 저장하지 않습니다.
 - 외부 분석·추적 서버로 데이터를 보내지 않습니다.
@@ -170,8 +171,8 @@ dotnet run --project windows/tests/CodyUsageOverlay.Checks/CodyUsageOverlay.Chec
 
 ## 알려진 제한 사항
 
-- Codex app-server와 rollout JSONL은 안정성이 보장된 공개 API가 아닙니다.
-- 활성 Context는 가장 최근에 갱신된 루트 Codex Desktop rollout을 기준으로 선택합니다.
+- [Codex app-server](https://learn.chatgpt.com/docs/app-server)는 공식 문서에 공개되어 있지만 실험적이며, rollout JSONL 형식은 안정적인 공개 계약이 아닙니다.
+- 활성 Context는 가장 최근에 갱신된 루트 데스크톱 Codex rollout을 기준으로 선택합니다.
 - Codex 업데이트로 펫 창 구조가 바뀌면 Cody 위치 탐지가 영향을 받을 수 있습니다.
 - Windows 펫 창 연동은 실제 Windows 11 환경 검증이 진행 중인 실험 기능입니다.
 - macOS 앱은 Developer ID 서명과 Apple 공증을 받지 않았습니다.

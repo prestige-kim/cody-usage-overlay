@@ -60,7 +60,7 @@ do {
         environmentPath: "/custom/bin:/opt/homebrew/bin"
     ).map(\.path)
     try expect(executableCandidates.contains("/Applications/ChatGPT.app/Contents/Resources/codex"), "system ChatGPT app candidate")
-    try expect(executableCandidates.contains("/Users/tester/Applications/Codex.app/Contents/Resources/codex"), "user Codex app candidate")
+    try expect(!executableCandidates.contains("/Users/tester/Applications/Codex.app/Contents/Resources/codex"), "legacy Codex app candidate removed")
     try expect(executableCandidates.contains("/Users/tester/.local/bin/codex"), "user CLI candidate")
     try expect(executableCandidates.contains("/custom/bin/codex"), "PATH CLI candidate")
     try expect(executableCandidates.filter { $0 == "/opt/homebrew/bin/codex" }.count == 1, "candidate paths must be deduplicated")
