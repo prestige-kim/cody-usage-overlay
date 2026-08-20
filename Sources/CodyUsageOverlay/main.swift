@@ -405,8 +405,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func installMenus() {
         usageView.menu = makeMenu()
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "chart.bar.fill", accessibilityDescription: "Cody Usage Overlay")
-        item.button?.toolTip = "Cody Usage Overlay"
+        item.button?.image = NSImage(systemSymbolName: "pawprint.fill", accessibilityDescription: "Cody 사용량 오버레이")
+        item.button?.toolTip = "Cody 사용량 오버레이"
         item.menu = makeMenu()
         statusItem = item
     }

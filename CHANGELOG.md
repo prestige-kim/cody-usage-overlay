@@ -14,6 +14,7 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Correct the macOS installation guidance to use OpenAI's current direct download; Windows continues to use Microsoft Store/MSIX discovery.
 - Detect the native-composition pet panel used by current ChatGPT builds and debounce transient window candidates.
 - Decouple overlay visibility from pet-window detection, reduce window polling to 10 Hz, and keep the last reliable anchor through short detection gaps.
+- Replace the ambiguous menu-bar chart with a paw icon and document how to relaunch after an intentional quit.
 
 ### Added
 
