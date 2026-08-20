@@ -38,30 +38,24 @@ public struct UsageSnapshot: Codable, Equatable, Sendable {
 public enum AnchorMode: String, Codable, Sendable { case petWindow, mainWindow, manual }
 
 public struct OverlayVisibilityController: Sendable {
-    public enum State: Sendable { case visible, waitingForPetToDisappear, waitingForPetToAppear }
-    public private(set) var state: State = .visible
+    public enum State: Sendable { case visible, hidden }
+    public private(set) var state: State
 
-    public init() {}
+    public init(isVisible: Bool = true) {
+        state = isVisible ? .visible : .hidden
+    }
 
-    public mutating func dismiss(petIsVisible: Bool) {
-        state = petIsVisible ? .waitingForPetToDisappear : .waitingForPetToAppear
+    public mutating func dismiss() {
+        state = .hidden
+    }
+
+    public mutating func show() {
+        state = .visible
     }
 
     @discardableResult
     public mutating func update(petIsVisible: Bool) -> Bool {
-        switch state {
-        case .visible:
-            return true
-        case .waitingForPetToDisappear:
-            if !petIsVisible { state = .waitingForPetToAppear }
-            return false
-        case .waitingForPetToAppear:
-            if petIsVisible {
-                state = .visible
-                return true
-            }
-            return false
-        }
+        state == .visible
     }
 }
 
@@ -70,11 +64,34 @@ public struct OverlayConfig: Codable, Equatable, Sendable {
     public var anchorMode = AnchorMode.petWindow
     public var offsetX: Double = 0
     public var offsetY: Double = 12
-    public var clickThrough = true
+    public var clickThrough = false
     public var warningThreshold = 30
     public var criticalThreshold = 10
+    public var overlayVisible = true
+    public var manualPositionX: Double?
+    public var manualPositionY: Double?
 
     public init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case launchAtLogin, anchorMode, offsetX, offsetY, clickThrough
+        case warningThreshold, criticalThreshold, overlayVisible
+        case manualPositionX, manualPositionY
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        launchAtLogin = try values.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
+        anchorMode = try values.decodeIfPresent(AnchorMode.self, forKey: .anchorMode) ?? .petWindow
+        offsetX = try values.decodeIfPresent(Double.self, forKey: .offsetX) ?? 0
+        offsetY = try values.decodeIfPresent(Double.self, forKey: .offsetY) ?? 12
+        clickThrough = try values.decodeIfPresent(Bool.self, forKey: .clickThrough) ?? false
+        warningThreshold = try values.decodeIfPresent(Int.self, forKey: .warningThreshold) ?? 30
+        criticalThreshold = try values.decodeIfPresent(Int.self, forKey: .criticalThreshold) ?? 10
+        overlayVisible = try values.decodeIfPresent(Bool.self, forKey: .overlayVisible) ?? true
+        manualPositionX = try values.decodeIfPresent(Double.self, forKey: .manualPositionX)
+        manualPositionY = try values.decodeIfPresent(Double.self, forKey: .manualPositionY)
+    }
 }
 
 public struct RateLimitWindow: Equatable, Sendable {

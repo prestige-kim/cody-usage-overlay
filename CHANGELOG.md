@@ -12,6 +12,19 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Document the unified ChatGPT desktop app as the required desktop client.
 - Remove legacy standalone Codex desktop application paths while retaining the official Codex CLI as a fallback.
 - Correct the macOS installation guidance to use OpenAI's current direct download; Windows continues to use Microsoft Store/MSIX discovery.
+- Detect the native-composition pet panel used by current ChatGPT builds and debounce transient window candidates.
+- Decouple overlay visibility from pet-window detection, reduce window polling to 10 Hz, and keep the last reliable anchor through short detection gaps.
+
+### Added
+
+- Add a persistent menu-bar control for showing the overlay, following Cody, click-through, always-on-top, and position reset.
+- Persist fixed positions and user-adjusted offsets while following Cody.
+
+### Fixed
+
+- Prevent the overlay from reappearing or staying hidden because a transient pet detection result changed.
+- Keep the overlay draggable in both fixed and follow modes and apply the previously unused vertical offset.
+- Decode existing configuration files when newer optional settings are absent.
 
 ## [0.2.1] - Unreleased
 

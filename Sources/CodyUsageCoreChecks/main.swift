@@ -89,15 +89,53 @@ do {
     )
 
     var visibility = OverlayVisibilityController()
-    visibility.dismiss(petIsVisible: true)
+    visibility.dismiss()
     try expect(!visibility.update(petIsVisible: true), "dismissed overlay stays hidden while pet remains visible")
-    try expect(!visibility.update(petIsVisible: false), "dismissed overlay waits while pet is hidden")
-    try expect(visibility.update(petIsVisible: true), "overlay returns when pet is shown again")
+    try expect(!visibility.update(petIsVisible: false), "pet detector loss must not change dismissed state")
+    visibility.show()
+    try expect(visibility.update(petIsVisible: false), "explicit show must work without a detected pet")
 
-    var hiddenWithoutPet = OverlayVisibilityController()
-    hiddenWithoutPet.dismiss(petIsVisible: false)
-    try expect(!hiddenWithoutPet.update(petIsVisible: false), "manual overlay remains hidden without pet")
-    try expect(hiddenWithoutPet.update(petIsVisible: true), "manual overlay returns on next pet appearance")
+    let legacyConfigData = Data("""
+    {"launchAtLogin":true,"anchorMode":"petWindow","offsetX":4,"offsetY":12,"clickThrough":false,"warningThreshold":30,"criticalThreshold":10}
+    """.utf8)
+    let migratedConfig = try JSONDecoder().decode(OverlayConfig.self, from: legacyConfigData)
+    try expect(migratedConfig.overlayVisible, "legacy config must default overlay visibility to visible")
+    try expect(migratedConfig.manualPositionX == nil, "legacy config must decode without manual position")
+    try expect(!migratedConfig.clickThrough, "legacy click-through preference must be preserved")
+
+    let legacyPetWindow = OverlayWindowSnapshot(
+        id: 1,
+        rect: CGRect(x: 100, y: 100, width: 192, height: 208),
+        layer: 0,
+        alpha: 1,
+        name: "Pet Mascot Effect"
+    )
+    let nativePetWindow = OverlayWindowSnapshot(
+        id: 2,
+        rect: CGRect(x: 200, y: 200, width: 84, height: 77),
+        layer: 3,
+        alpha: 1,
+        name: ""
+    )
+    let pointerHitArea = OverlayWindowSnapshot(
+        id: 3,
+        rect: CGRect(x: 210, y: 210, width: 59, height: 19),
+        layer: 103,
+        alpha: 0.1,
+        name: ""
+    )
+    try expect(
+        PetWindowSelector.select(from: [pointerHitArea, nativePetWindow])?.id == nativePetWindow.id,
+        "native composition mascot panel must beat the transient pointer hit area"
+    )
+    try expect(
+        PetWindowSelector.select(from: [nativePetWindow, legacyPetWindow])?.id == legacyPetWindow.id,
+        "explicit legacy mascot title must remain supported"
+    )
+    try expect(
+        PetWindowSelector.select(from: [legacyPetWindow, nativePetWindow], trackedWindowID: nativePetWindow.id)?.id == nativePetWindow.id,
+        "tracked mascot panel must stay stable while dragging"
+    )
 
     let oppositeAbove = OverlayGeometry.oppositeActivityOriginY(
         petCenterY: 500,
@@ -128,6 +166,22 @@ do {
         visibleScreenMaxY: 900
     )
     try expect(clampedOrigin == 24, "overlay must stay inside the visible screen")
+
+    let clampedPoint = OverlayGeometry.clampedOrigin(
+        x: 990,
+        y: -20,
+        panelWidth: 242,
+        panelHeight: 62,
+        visibleScreenFrame: CGRect(x: 0, y: 0, width: 1_000, height: 800)
+    )
+    try expect(clampedPoint.x == 754 && clampedPoint.y == 4, "manual offsets must remain reachable on screen")
+
+    let draggedPoint = OverlayGeometry.draggedOrigin(
+        windowOrigin: CGPoint(x: 200, y: 300),
+        dragStart: CGPoint(x: 400, y: 500),
+        currentPointer: CGPoint(x: 475, y: 460)
+    )
+    try expect(draggedPoint.x == 275 && draggedPoint.y == 260, "custom panel drag must preserve pointer delta")
 
     let tempRoot = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
