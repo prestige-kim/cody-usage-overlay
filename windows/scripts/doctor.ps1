@@ -104,7 +104,7 @@ if ($codex) {
     $server = [Diagnostics.Process]::new(); $server.StartInfo = $psi
     try {
         [void]$server.Start()
-        $server.StandardInput.WriteLine('{"id":1,"method":"initialize","params":{"clientInfo":{"name":"cody-usage-overlay-doctor","title":"Cody Usage Overlay Doctor","version":"0.2.1"},"capabilities":{"experimentalApi":true}}}')
+        $server.StandardInput.WriteLine('{"id":1,"method":"initialize","params":{"clientInfo":{"name":"cody-usage-overlay-doctor","title":"Cody Usage Overlay Doctor","version":"0.2.2"},"capabilities":{"experimentalApi":true}}}')
         $server.StandardInput.Flush(); $initialize = $server.StandardOutput.ReadLineAsync()
         if ($initialize.Wait(15000) -and $initialize.Result) {
             $server.StandardInput.WriteLine('{"method":"initialized","params":{}}')

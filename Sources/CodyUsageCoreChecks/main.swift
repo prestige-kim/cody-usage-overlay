@@ -10,7 +10,7 @@ func expect(_ condition: @autoclosure () -> Bool, _ message: String) throws {
     if !condition() { throw CheckFailure.mismatch(message) }
 }
 
-func writeRollout(file: URL, source: String, total: Int, weeklyUsed: Int? = nil) throws {
+func rolloutData(source: String, total: Int, weeklyUsed: Int? = nil) throws -> Data {
     var tokenPayload: [String: Any] = [
         "type": "token_count",
         "info": ["last_token_usage": ["total_tokens": total], "model_context_window": 100_000],
@@ -25,8 +25,11 @@ func writeRollout(file: URL, source: String, total: Int, weeklyUsed: Int? = nil)
         ["type": "session_meta", "payload": ["id": "root", "originator": source == "vscode" ? "Codex Desktop" : "codex-tui", "source": source]],
         ["type": "event_msg", "payload": tokenPayload],
     ]
-    let data = try lines.map { try JSONSerialization.data(withJSONObject: $0) + Data([0x0A]) }.reduce(Data(), +)
-    try data.write(to: file)
+    return try lines.map { try JSONSerialization.data(withJSONObject: $0) + Data([0x0A]) }.reduce(Data(), +)
+}
+
+func writeRollout(file: URL, source: String, total: Int, weeklyUsed: Int? = nil) throws {
+    try rolloutData(source: source, total: total, weeklyUsed: weeklyUsed).write(to: file)
 }
 
 do {
@@ -191,6 +194,28 @@ do {
     let usage = RolloutReader(sessionsRoot: tempRoot).refresh()
     try expect(usage?.usedTokens == 25_000, "root rollout selection")
     try expect(usage?.rateLimits?.weekly?.remainingPercent == 82, "rollout rate-limit fallback")
+
+    let incrementalRoot = tempRoot.appendingPathComponent("incremental")
+    try FileManager.default.createDirectory(at: incrementalRoot, withIntermediateDirectories: true)
+    let incrementalFile = incrementalRoot.appendingPathComponent("rollout-incremental-thread.jsonl")
+    let incrementalData = try rolloutData(source: "vscode", total: 30_000)
+    let finalLineStart = incrementalData.dropLast().lastIndex(of: 0x0A).map { incrementalData.index(after: $0) }
+        ?? incrementalData.startIndex
+    let splitIndex = incrementalData.index(
+        finalLineStart,
+        offsetBy: incrementalData.distance(from: finalLineStart, to: incrementalData.endIndex) / 2
+    )
+    try incrementalData[..<splitIndex].write(to: incrementalFile)
+    let incrementalReader = RolloutReader(sessionsRoot: incrementalRoot)
+    try expect(incrementalReader.refresh() == nil, "partial rollout record must wait for completion")
+    let incrementalHandle = try FileHandle(forWritingTo: incrementalFile)
+    try incrementalHandle.seekToEnd()
+    try incrementalHandle.write(contentsOf: incrementalData[splitIndex...])
+    try incrementalHandle.close()
+    try expect(incrementalReader.refresh()?.usedTokens == 30_000, "completed rollout record must be re-read")
+
+    try writeRollout(file: incrementalFile, source: "vscode", total: 5_000)
+    try expect(incrementalReader.refresh()?.usedTokens == 5_000, "truncated rollout file must reset its offset")
     print("All CodyUsageCore checks passed.")
 } catch {
     fputs("Check failed: \(error)\n", stderr)

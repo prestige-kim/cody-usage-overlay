@@ -60,14 +60,24 @@ public final class RolloutReader: @unchecked Sendable {
     private func readLatestUsage(from url: URL) -> ContextUsage? {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
         defer { try? handle.close() }
-        let start = offsets[url] ?? 0
+        let recordedOffset = offsets[url] ?? 0
+        let fileSize = (try? handle.seekToEnd()) ?? 0
+        let start = recordedOffset <= fileSize ? recordedOffset : 0
         try? handle.seek(toOffset: start)
         guard let data = try? handle.readToEnd(), !data.isEmpty else { return nil }
-        offsets[url] = start + UInt64(data.count)
+
+        // FSEvents can arrive between two writes that make up one JSONL record.
+        // Advance only through the last complete line so the unfinished suffix
+        // is read again when the writer appends the rest of the record.
+        guard let lastNewline = data.lastIndex(of: 0x0A) else { return nil }
+        let completeEnd = data.index(after: lastNewline)
+        let completeByteCount = data.distance(from: data.startIndex, to: completeEnd)
+        offsets[url] = start + UInt64(completeByteCount)
+        let completeData = data.prefix(completeByteCount)
 
         let threadId = url.deletingPathExtension().lastPathComponent.split(separator: "-").suffix(5).joined(separator: "-")
         var latest: ContextUsage?
-        for line in data.split(separator: 0x0A) {
+        for line in completeData.split(separator: 0x0A) {
             guard let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
                   object["type"] as? String == "event_msg",
                   let payload = object["payload"] as? [String: Any],
