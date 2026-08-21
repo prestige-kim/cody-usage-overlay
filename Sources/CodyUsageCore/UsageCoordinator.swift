@@ -11,6 +11,9 @@ public final class UsageCoordinator: @unchecked Sendable {
     private var snapshot = UsageSnapshot()
     private var updateHandler: UpdateHandler?
     private var retrySeconds: TimeInterval = 2
+    private var retryWorkItem: DispatchWorkItem?
+    private var rateLimitRefreshInFlight = false
+    private var rateLimitRefreshPending = false
     private var lastRateLimitUpdate: Date?
     private var lastContextUpdate: Date?
 
@@ -45,7 +48,13 @@ public final class UsageCoordinator: @unchecked Sendable {
 
     public func stop() {
         eventMonitor.stop()
-        queue.async { self.timer?.cancel(); self.timer = nil }
+        queue.async {
+            self.timer?.cancel()
+            self.timer = nil
+            self.retryWorkItem?.cancel()
+            self.retryWorkItem = nil
+            self.rateLimitRefreshPending = false
+        }
         Task { try? await client.stop() }
     }
 
@@ -89,36 +98,74 @@ public final class UsageCoordinator: @unchecked Sendable {
     }
 
     private func refreshRateLimits(force: Bool = false) {
+        queue.async { self.beginRateLimitRefresh(force: force) }
+    }
+
+    private func beginRateLimitRefresh(force: Bool) {
+        if force {
+            retryWorkItem?.cancel()
+            retryWorkItem = nil
+        } else if retryWorkItem != nil {
+            return
+        }
+        guard !rateLimitRefreshInFlight else {
+            if force { rateLimitRefreshPending = true }
+            return
+        }
+        rateLimitRefreshInFlight = true
         Task {
             do {
                 let raw = try await client.readRateLimits()
-                applyRateLimits(raw)
-                queue.async { self.retrySeconds = 2 }
+                queue.async {
+                    self.rateLimitRefreshInFlight = false
+                    self.retrySeconds = 2
+                    self.applyRateLimitsOnQueue(raw)
+                    self.runPendingRateLimitRefreshIfNeeded()
+                }
             } catch {
                 queue.async {
-                    self.snapshot.freshness = self.snapshot.fiveHourRemainingPercent == nil ? .unavailable : .delayed
+                    self.rateLimitRefreshInFlight = false
+                    let hasLimits = self.snapshot.fiveHourRemainingPercent != nil || self.snapshot.weeklyRemainingPercent != nil
+                    self.snapshot.freshness = hasLimits ? .delayed : .unavailable
                     self.publish()
+                    if self.runPendingRateLimitRefreshIfNeeded() { return }
                     let delay = self.retrySeconds
                     self.retrySeconds = min(60, self.retrySeconds * 2)
-                    self.queue.asyncAfter(deadline: .now() + delay) { self.refreshRateLimits() }
+                    let retry = DispatchWorkItem { [weak self] in
+                        guard let self else { return }
+                        self.retryWorkItem = nil
+                        self.beginRateLimitRefresh(force: false)
+                    }
+                    self.retryWorkItem = retry
+                    self.queue.asyncAfter(deadline: .now() + delay, execute: retry)
                 }
             }
         }
     }
 
+    @discardableResult
+    private func runPendingRateLimitRefreshIfNeeded() -> Bool {
+        guard rateLimitRefreshPending else { return false }
+        rateLimitRefreshPending = false
+        beginRateLimitRefresh(force: true)
+        return true
+    }
+
     private func applyRateLimits(_ raw: Data) {
-        queue.async {
-            do {
-                let result = try RateLimitParser.parse(data: raw)
-                self.mergeRateLimits(result)
-                self.lastRateLimitUpdate = Date()
-                self.snapshot.lastUpdatedAt = Date()
-                self.snapshot.freshness = .fresh
-            } catch {
-                self.snapshot.freshness = .incompatible
-            }
-            self.publish()
+        queue.async { self.applyRateLimitsOnQueue(raw) }
+    }
+
+    private func applyRateLimitsOnQueue(_ raw: Data) {
+        do {
+            let result = try RateLimitParser.parse(data: raw)
+            mergeRateLimits(result)
+            lastRateLimitUpdate = Date()
+            snapshot.lastUpdatedAt = Date()
+            snapshot.freshness = .fresh
+        } catch {
+            snapshot.freshness = .incompatible
         }
+        publish()
     }
 
     private func mergeRateLimits(_ result: RateLimitResult) {

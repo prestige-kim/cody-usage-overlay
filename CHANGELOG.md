@@ -7,6 +7,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-21
+
 ### Changed
 
 - Document the unified ChatGPT desktop app as the required desktop client.
@@ -15,6 +17,7 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Detect the native-composition pet panel used by current ChatGPT builds and debounce transient window candidates.
 - Decouple overlay visibility from pet-window detection, reduce window polling to 10 Hz, and keep the last reliable anchor through short detection gaps.
 - Replace the ambiguous menu-bar chart with a paw icon and document how to relaunch after an intentional quit.
+- Clarify the local rollout scanning behavior and add checksum and first-launch guidance for macOS users.
 
 ### Added
 
@@ -26,8 +29,11 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Prevent the overlay from reappearing or staying hidden because a transient pet detection result changed.
 - Keep the overlay draggable in both fixed and follow modes and apply the previously unused vertical offset.
 - Decode existing configuration files when newer optional settings are absent.
+- Preserve partial JSONL records across filesystem events and reset the reader after rollout truncation.
+- Serialize rate-limit refreshes and keep only one exponential-backoff retry pending.
+- Stage and verify macOS updates before replacing the installed app so removed bundle files cannot linger.
 
-## [0.2.1] - Unreleased
+## [0.2.1] - 2026-08-14
 
 ### Added
 
@@ -38,7 +44,7 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 - Preserve standalone CLI lookup paths as fallbacks after process and Store package discovery.
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-08-13
 
 ### Added
 
@@ -122,7 +128,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.5...v0.2.0
 [0.1.5]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.4...v0.1.5

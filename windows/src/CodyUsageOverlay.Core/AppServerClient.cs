@@ -38,7 +38,7 @@ public sealed class AppServerClient(ICodexExecutableLocator locator) : IAppServe
             _ = Task.Run(async () => { while (await newProcess.StandardError.ReadLineAsync() is not null) { } });
             await CallAsync("initialize", new
             {
-                clientInfo = new { name = "cody-usage-overlay-windows", title = "Cody Usage Overlay", version = "0.2.1" },
+                clientInfo = new { name = "cody-usage-overlay-windows", title = "Cody Usage Overlay", version = "0.2.2" },
                 capabilities = new { experimentalApi = true }
             }, true, cancellationToken);
             await WriteAsync(new { method = "initialized", @params = new { } }, cancellationToken);

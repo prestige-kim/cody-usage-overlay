@@ -12,10 +12,13 @@ analytics, advertising, or its own outbound HTTP client.
   `model_context_window`.
 - ChatGPT window metadata from macOS so the overlay can follow a visible pet.
 
-The rollout reader parses JSONL records in memory. It does not persist message
-content, prompts, responses, account identifiers, authentication tokens, or
-usage history. The app stores only UI preferences and writes operational logs
-to `~/Library/Logs/CodyUsageOverlay/`.
+The rollout reader scans JSONL records in memory and extracts only session
+metadata and token counters. Because those files contain other record types,
+prompt or response bytes can pass through memory while the reader skips them;
+they are not retained, displayed, or transmitted. The app does not persist
+message content, account identifiers, authentication tokens, or usage history.
+It stores only UI preferences and writes operational logs to
+`~/Library/Logs/CodyUsageOverlay/`.
 
 The bundled Codex executable and app-server use the user's existing ChatGPT
 desktop installation and authentication. Their behavior is governed by

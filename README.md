@@ -29,9 +29,15 @@ Codex를 사용할 수 있는 ChatGPT 데스크톱 앱이 설치되어 있어야
 
 1. [Releases](https://github.com/prestige-kim/cody-usage-overlay/releases)에서 최신 `CodyUsageOverlay-*-arm64.zip`을 받습니다.
 2. 압축을 풀고 `Install.command`를 실행합니다.
-3. macOS가 차단하면 파일을 Control-클릭한 뒤 **열기**를 선택합니다.
+3. macOS가 차단하면 `Install.command`를 Control-클릭한 뒤 **열기**를 선택합니다.
 
-설치 위치는 `~/Applications/CodyUsageOverlay.app`입니다.
+설치가 끝나면 앱이 자동으로 시작되며 메뉴 막대에 발바닥 아이콘이 나타납니다. 설치 위치는 `~/Applications/CodyUsageOverlay.app`이고, 다음 로그인부터 자동으로 실행됩니다.
+
+릴리스 ZIP과 `.sha256` 파일을 같은 폴더에 받았다면 설치 전에 체크섬을 확인할 수 있습니다.
+
+```bash
+shasum -a 256 -c CodyUsageOverlay-*-arm64.zip.sha256
+```
 
 ### Windows 11
 
@@ -76,7 +82,7 @@ irm https://raw.githubusercontent.com/prestige-kim/cody-usage-overlay/main/windo
 Week와 5h는 로컬 `codex app-server --stdio`에서 읽습니다. Context는 `~/.codex/sessions`의 토큰 사용량 기록으로 계산합니다.
 
 - API 키나 별도 로그인이 필요하지 않습니다.
-- 인증 토큰과 대화 본문을 읽거나 저장하지 않습니다.
+- 세션 JSONL을 로컬 메모리에서 훑어 토큰 카운터만 추출하며, 프롬프트·응답·인증 토큰을 저장하거나 외부로 보내지 않습니다.
 - 사용량 숫자를 디스크나 외부 서버로 보내지 않습니다.
 
 자세한 내용은 [PRIVACY.md](PRIVACY.md)를 참고하세요.
