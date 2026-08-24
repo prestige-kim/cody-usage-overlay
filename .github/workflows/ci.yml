@@ -39,6 +39,9 @@ jobs:
         run: |
           test -x dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay
           plutil -lint dist/CodyUsageOverlay.app/Contents/Info.plist
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' dist/CodyUsageOverlay.app/Contents/Info.plist)" = "CodyUsageOverlay.icns"
+          test -f dist/CodyUsageOverlay.app/Contents/Resources/CodyUsageOverlay.icns
+          test -f dist/CodyUsageOverlay.app/Contents/Resources/cody-usage-emoticon.png
           codesign --verify --deep --strict --verbose=2 dist/CodyUsageOverlay.app
           file dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay | grep -q arm64
 
@@ -100,6 +103,11 @@ jobs:
           @('app/CodyUsageOverlay.exe','install.ps1','uninstall.ps1','doctor.ps1') | ForEach-Object {
             if (-not (Test-Path (Join-Path "$env:RUNNER_TEMP/unpacked" $_))) { throw "Missing $_" }
           }
+          Add-Type -AssemblyName System.Drawing
+          $exe = Join-Path "$env:RUNNER_TEMP/unpacked" 'app/CodyUsageOverlay.exe'
+          $icon = [System.Drawing.Icon]::ExtractAssociatedIcon($exe)
+          if (-not $icon -or $icon.Width -lt 16 -or $icon.Height -lt 16) { throw 'Embedded Windows app icon missing' }
+          $icon.Dispose()
 
       - name: Upload Windows CI artifact
         uses: actions/upload-artifact@v4

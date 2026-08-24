@@ -5,6 +5,7 @@
     <UseWPF>true</UseWPF>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\..\Resources\CodyUsageOverlay.ico</ApplicationIcon>
     <AssemblyName>CodyUsageOverlay</AssemblyName>
     <RootNamespace>CodyUsageOverlay.App</RootNamespace>
   </PropertyGroup>

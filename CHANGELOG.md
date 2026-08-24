@@ -7,6 +7,17 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-08-24
+
+### Added
+
+- Add a dedicated Cody Usage Overlay mascot and a README hero card that explains the Week, 5h, and Context display at a glance.
+
+### Changed
+
+- Replace the macOS menu-bar paw with the new product mascot.
+- Apply the new product icon to packaged macOS app bundles and Windows executables.
+
 ## [0.2.2] - 2026-08-21
 
 ### Changed
@@ -128,7 +139,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.1.5...v0.2.0
