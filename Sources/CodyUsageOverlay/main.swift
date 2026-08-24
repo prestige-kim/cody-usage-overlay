@@ -405,9 +405,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func installMenus() {
         usageView.menu = makeMenu()
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        if let iconURL = Bundle.main.url(forResource: "cody-usage-emoticon", withExtension: "png"),
+        if let iconURL = Bundle.main.url(forResource: "cody-usage-menubar", withExtension: "png"),
            let icon = NSImage(contentsOf: iconURL) {
-            icon.size = NSSize(width: 18, height: 18)
+            icon.size = NSSize(width: 20, height: 20)
             icon.isTemplate = false
             icon.accessibilityDescription = "Cody 사용량 오버레이"
             item.button?.image = icon

@@ -41,7 +41,7 @@ jobs:
           plutil -lint dist/CodyUsageOverlay.app/Contents/Info.plist
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' dist/CodyUsageOverlay.app/Contents/Info.plist)" = "CodyUsageOverlay.icns"
           test -f dist/CodyUsageOverlay.app/Contents/Resources/CodyUsageOverlay.icns
-          test -f dist/CodyUsageOverlay.app/Contents/Resources/cody-usage-emoticon.png
+          test -f dist/CodyUsageOverlay.app/Contents/Resources/cody-usage-menubar.png
           codesign --verify --deep --strict --verbose=2 dist/CodyUsageOverlay.app
           file dist/CodyUsageOverlay.app/Contents/MacOS/CodyUsageOverlay | grep -q arm64
 

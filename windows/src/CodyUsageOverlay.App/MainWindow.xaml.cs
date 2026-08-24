@@ -130,7 +130,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private string Diagnostics() => $"Cody Usage Overlay Windows 0.2.3\nOS: {Environment.OSVersion}\nArchitecture: {RuntimeInformation.OSArchitecture}\nCodex: {locator.Locate() ?? "not found"}\nCandidates:\n{string.Join("\n", locator.Candidates)}\nFreshness: {snapshot.Freshness}\n{anchors.Diagnostics}";
+    private string Diagnostics() => $"Cody Usage Overlay Windows 0.2.4\nOS: {Environment.OSVersion}\nArchitecture: {RuntimeInformation.OSArchitecture}\nCodex: {locator.Locate() ?? "not found"}\nCandidates:\n{string.Join("\n", locator.Candidates)}\nFreshness: {snapshot.Freshness}\n{anchors.Diagnostics}";
     private static string Percent(int? value) => value is null ? "—" : $"{value}%";
     private Brush BrushFor(int? value) => value is null ? Brushes.White : value <= config.CriticalThreshold ? new SolidColorBrush(Color.FromRgb(255, 89, 89)) : value <= config.WarningThreshold ? new SolidColorBrush(Color.FromRgb(255, 171, 66)) : new SolidColorBrush(Color.FromRgb(125, 164, 255));
 

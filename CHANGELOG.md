@@ -7,6 +7,12 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-08-24
+
+### Fixed
+
+- Enlarge the macOS menu-bar mascot to match neighboring status icons by using a tightly cropped menu-specific asset and a 20-point render size.
+
 ## [0.2.3] - 2026-08-24
 
 ### Added
@@ -139,7 +145,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.0...v0.2.1

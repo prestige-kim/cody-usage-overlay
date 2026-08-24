@@ -28,7 +28,7 @@ jobs:
           ./scripts/check.sh
           ./scripts/package-release.sh "$RUNNER_TEMP"
           test -f dist/CodyUsageOverlay.app/Contents/Resources/CodyUsageOverlay.icns
-          test -f dist/CodyUsageOverlay.app/Contents/Resources/cody-usage-emoticon.png
+          test -f dist/CodyUsageOverlay.app/Contents/Resources/cody-usage-menubar.png
           (cd "$RUNNER_TEMP" && shasum -a 256 -c CodyUsageOverlay-*-arm64.zip.sha256)
       - uses: actions/upload-artifact@v4
         with:
