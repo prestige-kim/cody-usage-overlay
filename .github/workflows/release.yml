@@ -27,6 +27,8 @@ jobs:
           test "$RELEASE_TAG" = "v$app_version"
           ./scripts/check.sh
           ./scripts/package-release.sh "$RUNNER_TEMP"
+          test -f dist/CodyUsageOverlay.app/Contents/Resources/CodyUsageOverlay.icns
+          test -f dist/CodyUsageOverlay.app/Contents/Resources/cody-usage-emoticon.png
           (cd "$RUNNER_TEMP" && shasum -a 256 -c CodyUsageOverlay-*-arm64.zip.sha256)
       - uses: actions/upload-artifact@v4
         with:
@@ -49,6 +51,12 @@ jobs:
           if ($env:RELEASE_TAG -ne "v$($props.Project.PropertyGroup.Version)") { throw 'Windows version does not match tag' }
           dotnet run --project windows/tests/CodyUsageOverlay.Checks/CodyUsageOverlay.Checks.csproj -c Release
           ./windows/scripts/package.ps1 -OutputDirectory "$env:RUNNER_TEMP"
+          $stage = Join-Path $env:RUNNER_TEMP 'icon-check'
+          Expand-Archive (Get-ChildItem "$env:RUNNER_TEMP/CodyUsageOverlay-*-windows-x64.zip" | Select-Object -First 1).FullName $stage
+          Add-Type -AssemblyName System.Drawing
+          $icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Join-Path $stage 'app/CodyUsageOverlay.exe'))
+          if (-not $icon -or $icon.Width -lt 16 -or $icon.Height -lt 16) { throw 'Embedded Windows app icon missing' }
+          $icon.Dispose()
       - uses: actions/upload-artifact@v4
         with:
           name: release-windows

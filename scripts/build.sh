@@ -21,6 +21,8 @@ mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 cp "$BIN_DIR/CodyUsageOverlay" "$APP_DIR/Contents/MacOS/CodyUsageOverlay"
 cp "$PROJECT_DIR/Resources/Info.plist" "$APP_DIR/Contents/Info.plist"
 cp "$PROJECT_DIR/Resources/codex-emoji.png" "$APP_DIR/Contents/Resources/codex-emoji.png"
+cp "$PROJECT_DIR/Resources/Brand/cody-usage-emoticon-128.png" "$APP_DIR/Contents/Resources/cody-usage-emoticon.png"
+cp "$PROJECT_DIR/Resources/CodyUsageOverlay.icns" "$APP_DIR/Contents/Resources/CodyUsageOverlay.icns"
 for attempt in 1 2 3; do
   xattr -cr "$APP_DIR"
   if codesign --force --deep --sign - "$APP_DIR"; then

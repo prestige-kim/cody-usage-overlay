@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/cody-usage-overlay-card.png" alt="Cody Usage Overlay — Cody 옆에서 Week, 5h, Context 사용량을 한눈에 확인하는 오버레이" width="100%">
+</p>
+
 # Cody Usage Overlay
 
 [![CI](https://github.com/prestige-kim/cody-usage-overlay/actions/workflows/ci.yml/badge.svg)](https://github.com/prestige-kim/cody-usage-overlay/actions/workflows/ci.yml)
