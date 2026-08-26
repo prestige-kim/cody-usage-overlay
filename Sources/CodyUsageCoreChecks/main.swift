@@ -137,8 +137,8 @@ do {
     )
 
     let countdownNow = Date(timeIntervalSince1970: 1_000_000)
-    let fiveHourCountdownSeconds: TimeInterval = 2 * 3_600 + 18 * 60 + 43
-    let weeklyCountdownSeconds: TimeInterval = 3 * 86_400 + 14 * 3_600 + 22 * 60 + 59
+    let fiveHourCountdownSeconds: TimeInterval = 8_323
+    let weeklyCountdownSeconds: TimeInterval = 310_979
     let fiveHourReset = countdownNow.addingTimeInterval(fiveHourCountdownSeconds)
     let weeklyReset = countdownNow.addingTimeInterval(weeklyCountdownSeconds)
     let countdown = ResetCountdownFormatter.make(
