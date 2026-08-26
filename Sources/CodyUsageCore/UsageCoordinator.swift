@@ -63,12 +63,22 @@ public final class UsageCoordinator: @unchecked Sendable {
     public func diagnostics() -> String {
         queue.sync {
             let executable = AppServerClient.locateExecutable()?.path ?? "missing"
-            return "Codex: \(executable)\nThread: \(snapshot.activeThreadId ?? "unknown")\nFreshness: \(snapshot.freshness.rawValue)\nUpdated: \(snapshot.lastUpdatedAt)"
+            return "Codex: \(executable)\nThread: \(snapshot.activeThreadId ?? "unknown")\nState: \(snapshot.codyState.rawValue)\nAgent Pulse: \(snapshot.agentPulse.rawValue) (\(snapshot.agentPulseReason))\nFreshness: \(snapshot.freshness.rawValue)\nUpdated: \(snapshot.lastUpdatedAt)"
         }
     }
 
     private func tick() {
+        if let usage = rolloutReader.refreshActive() { applyContext(usage) }
         if lastRateLimitUpdate == nil || Date().timeIntervalSince(lastRateLimitUpdate!) >= 60 { refreshRateLimits() }
+        let visibleState = CodyStatePolicy.visibleState(
+            snapshot.codyState,
+            updatedAt: snapshot.codyStateUpdatedAt
+        )
+        if visibleState != snapshot.codyState {
+            snapshot.codyState = visibleState
+            snapshot.codyStateUpdatedAt = Date()
+            publish()
+        }
         let newest = [lastRateLimitUpdate, lastContextUpdate].compactMap { $0 }.max() ?? .distantPast
         if Date().timeIntervalSince(newest) > 90 && snapshot.freshness == .fresh {
             snapshot.freshness = .delayed; publish()
@@ -90,6 +100,10 @@ public final class UsageCoordinator: @unchecked Sendable {
     private func applyContext(_ usage: ContextUsage) {
             snapshot.contextRemainingPercent = usage.remainingPercent
             snapshot.activeThreadId = usage.threadId
+            snapshot.codyState = usage.codyState
+            snapshot.codyStateUpdatedAt = usage.codyStateUpdatedAt
+            snapshot.agentPulse = usage.agentPulse
+            snapshot.agentPulseReason = usage.agentPulseReason
             if let rateLimits = usage.rateLimits { mergeRateLimits(rateLimits) }
             lastContextUpdate = usage.updatedAt
             snapshot.lastUpdatedAt = Date()

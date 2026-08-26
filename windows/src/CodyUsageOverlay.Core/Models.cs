@@ -1,6 +1,15 @@
 namespace CodyUsageOverlay.Core;
 
 public enum Freshness { Fresh, Delayed, Unavailable, Incompatible }
+public enum CodyState { Ready, Thinking, Acting, Waiting, Complete, Error }
+
+public static class CodyStatePolicy
+{
+    public static CodyState VisibleState(CodyState state, DateTimeOffset updatedAt, DateTimeOffset now, TimeSpan? completedDisplayDuration = null) =>
+        state == CodyState.Complete && now - updatedAt >= (completedDisplayDuration ?? TimeSpan.FromSeconds(3))
+            ? CodyState.Ready
+            : state;
+}
 
 public sealed record UsageSnapshot(
     int? ContextRemainingPercent = null,
@@ -9,6 +18,10 @@ public sealed record UsageSnapshot(
     DateTimeOffset? FiveHourResetsAt = null,
     DateTimeOffset? WeeklyResetsAt = null,
     string? ActiveThreadId = null,
+    CodyState CodyState = CodyUsageOverlay.Core.CodyState.Ready,
+    DateTimeOffset? CodyStateUpdatedAt = null,
+    AgentPulse AgentPulse = CodyUsageOverlay.Core.AgentPulse.Steady,
+    string AgentPulseReason = "흐름 안정",
     DateTimeOffset? LastUpdatedAt = null,
     Freshness Freshness = Freshness.Unavailable);
 
@@ -24,7 +37,11 @@ public sealed record ContextUsage(
     int UsedTokens,
     int ModelContextWindow,
     DateTimeOffset UpdatedAt,
-    RateLimitResult? RateLimits = null)
+    RateLimitResult? RateLimits = null,
+    CodyState CodyState = CodyUsageOverlay.Core.CodyState.Ready,
+    DateTimeOffset? CodyStateUpdatedAt = null,
+    AgentPulse AgentPulse = CodyUsageOverlay.Core.AgentPulse.Steady,
+    string AgentPulseReason = "흐름 안정")
 {
     public int RemainingPercent => ModelContextWindow <= 0
         ? 0
@@ -63,6 +80,7 @@ public interface ISessionMonitor : IDisposable
 {
     event Action<ContextUsage>? Updated;
     ContextUsage? Refresh();
+    ContextUsage? RefreshActive();
     void Start();
 }
 public interface IWindowAnchorProvider : IDisposable

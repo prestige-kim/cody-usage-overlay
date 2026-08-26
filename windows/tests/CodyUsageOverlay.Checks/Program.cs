@@ -27,6 +27,45 @@ var checks = new List<(string Name, Action Run)>
         Equal(75, new ContextUsage("a", 25, 100, DateTimeOffset.Now).RemainingPercent);
         Equal(0, new ContextUsage("a", 200, 100, DateTimeOffset.Now).RemainingPercent);
     }),
+    ("Cody state completion policy", () =>
+    {
+        var now = DateTimeOffset.FromUnixTimeSeconds(10_000);
+        Equal(CodyState.Complete, CodyStatePolicy.VisibleState(CodyState.Complete, now, now.AddSeconds(2.9)));
+        Equal(CodyState.Ready, CodyStatePolicy.VisibleState(CodyState.Complete, now, now.AddSeconds(3)));
+        Equal(CodyState.Error, CodyStatePolicy.VisibleState(CodyState.Error, now, now.AddSeconds(30)));
+    }),
+    ("Agent Pulse classification", () =>
+    {
+        var now = DateTimeOffset.FromUnixTimeSeconds(20_000);
+        Equal(AgentPulse.Steady, AgentPulseAnalyzer.Evaluate([], CodyState.Ready, 80, now).Pulse);
+        Equal(AgentPulse.Active, AgentPulseAnalyzer.Evaluate([], CodyState.Thinking, 80, now).Pulse);
+        Equal(AgentPulse.Stalled, AgentPulseAnalyzer.Evaluate(
+            [new AgentPulseEvent(AgentPulseEventKind.TaskStarted, now.AddSeconds(-46))], CodyState.Thinking, 80, now).Pulse);
+        Equal(AgentPulse.Steady, AgentPulseAnalyzer.Evaluate(
+            [new AgentPulseEvent(AgentPulseEventKind.TaskStarted, now.AddSeconds(-46))], CodyState.Waiting, 80, now).Pulse);
+        Equal(AgentPulse.Overloaded, AgentPulseAnalyzer.Evaluate(
+            Enumerable.Range(0, 8).Select(x => new AgentPulseEvent(AgentPulseEventKind.ToolCall, now.AddSeconds(-x))),
+            CodyState.Acting, 80, now).Pulse);
+        Equal(AgentPulse.Unstable, AgentPulseAnalyzer.Evaluate(
+            [new AgentPulseEvent(AgentPulseEventKind.Error, now.AddSeconds(-10)), new AgentPulseEvent(AgentPulseEventKind.Error, now.AddSeconds(-2))],
+            CodyState.Thinking, 80, now).Pulse);
+        Equal(AgentPulse.Finishing, AgentPulseAnalyzer.Evaluate([], CodyState.Complete, 80, now).Pulse);
+    }),
+    ("reset countdown formats compactly", () =>
+    {
+        var now = DateTimeOffset.FromUnixTimeSeconds(1_000_000);
+        var display = ResetCountdownFormatter.Create(
+            now.AddSeconds(2 * 3600 + 18 * 60 + 43),
+            now.AddSeconds(3 * 86400 + 14 * 3600 + 22 * 60 + 59),
+            now);
+        Equal("02:18:43", display.FiveHourText);
+        Equal("3일 14:22", display.WeeklyText);
+        Equal(false, display.HasExpiredReset);
+        var expired = ResetCountdownFormatter.Create(now.AddSeconds(-1), null, now);
+        Equal("갱신 중…", expired.FiveHourText);
+        Equal("—", expired.WeeklyText);
+        Equal(true, expired.HasExpiredReset);
+    }),
     ("Store ChatGPT process resolves bundled Codex", () =>
     {
         var root = Path.Combine(Path.GetTempPath(), "cody-store-check-" + Guid.NewGuid());
@@ -71,6 +110,26 @@ var checks = new List<(string Name, Action Run)>
         ]);
         using var monitor = new RolloutSessionMonitor(root);
         Equal(80, monitor.Refresh()?.RemainingPercent);
+        File.AppendAllText(rollout, "{\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\"}}" + Environment.NewLine);
+        Equal(CodyState.Thinking, monitor.Refresh()?.CodyState);
+        File.AppendAllText(rollout, "{\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"name\":\"exec\",\"call_id\":\"call-1\",\"status\":\"completed\"}}" + Environment.NewLine);
+        var acting = monitor.Refresh();
+        Equal(CodyState.Acting, acting?.CodyState);
+        Equal(AgentPulse.Active, acting?.AgentPulse);
+        File.AppendAllText(rollout, "{\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call_output\",\"call_id\":\"call-1\",\"output\":\"ok\"}}" + Environment.NewLine);
+        Equal(CodyState.Acting, monitor.Refresh()?.CodyState);
+        File.AppendAllText(rollout, "{\"type\":\"event_msg\",\"payload\":{\"type\":\"item_completed\",\"item\":{\"type\":\"Reasoning\"}}}" + Environment.NewLine);
+        Equal(CodyState.Thinking, monitor.Refresh()?.CodyState);
+        File.AppendAllText(rollout, "{\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"name\":\"request_user_input\",\"call_id\":\"call-2\",\"status\":\"completed\"}}" + Environment.NewLine);
+        Equal(CodyState.Waiting, monitor.Refresh()?.CodyState);
+        File.AppendAllText(rollout, "{\"type\":\"event_msg\",\"payload\":{\"type\":\"item_completed\",\"item\":{\"type\":\"CommandExecution\",\"status\":\"failed\"}}}" + Environment.NewLine);
+        Equal(CodyState.Error, monitor.Refresh()?.CodyState);
+        File.AppendAllText(rollout, "{\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\"}}" + Environment.NewLine);
+        Equal(CodyState.Thinking, monitor.Refresh()?.CodyState);
+        File.AppendAllText(rollout, "{\"type\":\"event_msg\",\"payload\":{\"type\":\"task_complete\"}}" + Environment.NewLine);
+        var completed = monitor.Refresh();
+        Equal(CodyState.Complete, completed?.CodyState);
+        Equal(AgentPulse.Finishing, completed?.AgentPulse);
         var next = "{\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"last_token_usage\":{\"total_tokens\":30},\"model_context_window\":100}}";
         File.AppendAllText(rollout, Environment.NewLine + next[..40]);
         Equal(80, monitor.Refresh()?.RemainingPercent);

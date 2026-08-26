@@ -32,6 +32,13 @@ func writeRollout(file: URL, source: String, total: Int, weeklyUsed: Int? = nil)
     try rolloutData(source: source, total: total, weeklyUsed: weeklyUsed).write(to: file)
 }
 
+func appendRolloutLine(_ object: [String: Any], to file: URL) throws {
+    let handle = try FileHandle(forWritingTo: file)
+    defer { try? handle.close() }
+    try handle.seekToEnd()
+    try handle.write(contentsOf: JSONSerialization.data(withJSONObject: object) + Data([0x0A]))
+}
+
 do {
     let reversed: [String: Any] = ["rateLimits": [
         "primary": ["usedPercent": 22, "windowDurationMins": 10_080],
@@ -57,6 +64,95 @@ do {
 
     let context = ContextUsage(threadId: "root", usedTokens: 25_000, modelContextWindow: 100_000, updatedAt: Date())
     try expect(context.remainingPercent == 75, "context calculation")
+    try expect(CodyState.ready.displayName == "준비됨", "ready state label")
+    try expect(CodyState.thinking.displayName == "생각 중", "thinking state label")
+    try expect(CodyState.acting.displayName == "도구 실행 중", "acting state label")
+    try expect(CodyState.waiting.displayName == "입력 대기", "waiting state label")
+    try expect(CodyState.complete.displayName == "완료", "complete state label")
+    try expect(CodyState.error.displayName == "확인 필요", "error state label")
+    try expect(AgentPulse.steady.displayName == "원활", "steady pulse label")
+    try expect(AgentPulse.active.displayName == "활발", "active pulse label")
+    try expect(AgentPulse.overloaded.displayName == "과부하", "overloaded pulse label")
+    try expect(AgentPulse.stalled.displayName == "정체", "stalled pulse label")
+    try expect(AgentPulse.unstable.displayName == "불안정", "unstable pulse label")
+    try expect(AgentPulse.finishing.displayName == "마무리", "finishing pulse label")
+    let stateNow = Date(timeIntervalSince1970: 10_000)
+    try expect(
+        CodyStatePolicy.visibleState(.complete, updatedAt: stateNow, now: stateNow.addingTimeInterval(2.9)) == .complete,
+        "complete state remains visible for three seconds"
+    )
+    try expect(
+        CodyStatePolicy.visibleState(.complete, updatedAt: stateNow, now: stateNow.addingTimeInterval(3)) == .ready,
+        "complete state returns to ready"
+    )
+    try expect(
+        CodyStatePolicy.visibleState(.error, updatedAt: stateNow, now: stateNow.addingTimeInterval(30)) == .error,
+        "error state stays visible until a new task"
+    )
+
+    let pulseNow = Date(timeIntervalSince1970: 20_000)
+    try expect(
+        AgentPulseAnalyzer.evaluate(events: [], codyState: .ready, contextRemainingPercent: 80, now: pulseNow).pulse == .steady,
+        "idle agent pulse is steady"
+    )
+    try expect(
+        AgentPulseAnalyzer.evaluate(events: [], codyState: .thinking, contextRemainingPercent: 80, now: pulseNow).pulse == .active,
+        "active reasoning produces an active pulse"
+    )
+    let stalledEvents = [AgentPulseEvent(kind: .taskStarted, timestamp: pulseNow.addingTimeInterval(-46))]
+    try expect(
+        AgentPulseAnalyzer.evaluate(events: stalledEvents, codyState: .thinking, contextRemainingPercent: 80, now: pulseNow).pulse == .stalled,
+        "active task without progress becomes stalled"
+    )
+    try expect(
+        AgentPulseAnalyzer.evaluate(events: stalledEvents, codyState: .waiting, contextRemainingPercent: 80, now: pulseNow).pulse == .steady,
+        "explicit input waiting is not stalled"
+    )
+    let toolBurst = (0..<8).map {
+        AgentPulseEvent(kind: .toolCall, timestamp: pulseNow.addingTimeInterval(Double(-$0)))
+    }
+    try expect(
+        AgentPulseAnalyzer.evaluate(events: toolBurst, codyState: .acting, contextRemainingPercent: 80, now: pulseNow).pulse == .overloaded,
+        "tool burst produces overloaded pulse"
+    )
+    let repeatedErrors = [
+        AgentPulseEvent(kind: .error, timestamp: pulseNow.addingTimeInterval(-10)),
+        AgentPulseEvent(kind: .error, timestamp: pulseNow.addingTimeInterval(-2)),
+    ]
+    try expect(
+        AgentPulseAnalyzer.evaluate(events: repeatedErrors, codyState: .thinking, contextRemainingPercent: 80, now: pulseNow).pulse == .unstable,
+        "repeated errors produce unstable pulse"
+    )
+    try expect(
+        AgentPulseAnalyzer.evaluate(events: [], codyState: .complete, contextRemainingPercent: 80, now: pulseNow).pulse == .finishing,
+        "completed task produces finishing pulse"
+    )
+    let tokenBurn = [
+        AgentPulseEvent(kind: .tokenSample(total: 5_000, contextWindow: 100_000), timestamp: pulseNow.addingTimeInterval(-240)),
+        AgentPulseEvent(kind: .tokenSample(total: 18_000, contextWindow: 100_000), timestamp: pulseNow),
+    ]
+    try expect(
+        AgentPulseAnalyzer.evaluate(events: tokenBurn, codyState: .thinking, contextRemainingPercent: 82, now: pulseNow).reason == "컨텍스트 소모 빠름",
+        "fast context burn is explained"
+    )
+
+    let countdownNow = Date(timeIntervalSince1970: 1_000_000)
+    let countdown = ResetCountdownFormatter.make(
+        fiveHourResetsAt: countdownNow.addingTimeInterval(2 * 3_600 + 18 * 60 + 43),
+        weeklyResetsAt: countdownNow.addingTimeInterval(3 * 86_400 + 14 * 3_600 + 22 * 60 + 59),
+        now: countdownNow
+    )
+    try expect(countdown.fiveHourText == "02:18:43", "five-hour countdown formatting")
+    try expect(countdown.weeklyText == "3일 14:22", "weekly countdown formatting")
+    try expect(!countdown.hasExpiredReset, "future reset must not request a refresh")
+    let expiredCountdown = ResetCountdownFormatter.make(
+        fiveHourResetsAt: countdownNow.addingTimeInterval(-1),
+        weeklyResetsAt: nil,
+        now: countdownNow
+    )
+    try expect(expiredCountdown.fiveHourText == "갱신 중…", "expired reset state")
+    try expect(expiredCountdown.weeklyText == "—", "missing reset state")
+    try expect(expiredCountdown.hasExpiredReset, "expired reset must request a refresh")
 
     let executableCandidates = AppServerClient.candidateExecutableURLs(
         homeDirectory: URL(fileURLWithPath: "/Users/tester"),
@@ -191,9 +287,71 @@ do {
     defer { try? FileManager.default.removeItem(at: tempRoot) }
     try writeRollout(file: tempRoot.appendingPathComponent("rollout-root-thread.jsonl"), source: "vscode", total: 25_000, weeklyUsed: 18)
     try writeRollout(file: tempRoot.appendingPathComponent("rollout-cli-thread.jsonl"), source: "cli", total: 100_000)
-    let usage = RolloutReader(sessionsRoot: tempRoot).refresh()
+    let rolloutReader = RolloutReader(sessionsRoot: tempRoot)
+    let usage = rolloutReader.refresh()
     try expect(usage?.usedTokens == 25_000, "root rollout selection")
     try expect(usage?.rateLimits?.weekly?.remainingPercent == 82, "rollout rate-limit fallback")
+
+    let rootFile = tempRoot.appendingPathComponent("rollout-root-thread.jsonl")
+    try appendRolloutLine(["type": "event_msg", "payload": ["type": "task_started"]], to: rootFile)
+    try expect(rolloutReader.refresh(changedPaths: [rootFile.path])?.codyState == .thinking, "task start maps to thinking")
+    try appendRolloutLine([
+        "type": "response_item",
+        "payload": ["type": "custom_tool_call", "name": "exec", "call_id": "call-1", "status": "completed"],
+    ], to: rootFile)
+    let actingUsage = rolloutReader.refresh(changedPaths: [rootFile.path])
+    try expect(actingUsage?.codyState == .acting, "tool call maps to acting")
+    try expect(actingUsage?.agentPulse == .active, "tool activity maps to active agent pulse")
+    try appendRolloutLine([
+        "type": "response_item",
+        "payload": ["type": "custom_tool_call_output", "call_id": "call-1", "output": "ok"],
+    ], to: rootFile)
+    try expect(rolloutReader.refresh(changedPaths: [rootFile.path])?.codyState == .acting, "tool result remains acting until reasoning resumes")
+    try appendRolloutLine([
+        "type": "event_msg",
+        "payload": ["type": "item_completed", "item": ["type": "Reasoning"]],
+    ], to: rootFile)
+    try expect(rolloutReader.refresh(changedPaths: [rootFile.path])?.codyState == .thinking, "reasoning event restores thinking")
+    try appendRolloutLine([
+        "type": "response_item",
+        "payload": ["type": "custom_tool_call", "name": "request_user_input", "call_id": "call-2", "status": "completed"],
+    ], to: rootFile)
+    try expect(rolloutReader.refresh(changedPaths: [rootFile.path])?.codyState == .waiting, "input request maps to waiting")
+    try appendRolloutLine([
+        "type": "event_msg",
+        "payload": ["type": "item_completed", "item": ["type": "CommandExecution", "status": "failed"]],
+    ], to: rootFile)
+    try expect(rolloutReader.refresh(changedPaths: [rootFile.path])?.codyState == .error, "failed work item maps to error")
+    try appendRolloutLine(["type": "event_msg", "payload": ["type": "task_started"]], to: rootFile)
+    try expect(rolloutReader.refresh(changedPaths: [rootFile.path])?.codyState == .thinking, "new task clears error state")
+    try appendRolloutLine(["type": "event_msg", "payload": ["type": "task_complete"]], to: rootFile)
+    let completedUsage = rolloutReader.refreshActive()
+    try expect(completedUsage?.codyState == .complete, "active rollout polling captures task completion")
+    try expect(completedUsage?.agentPulse == .finishing, "task completion maps to finishing agent pulse")
+
+    let timestampRoot = tempRoot.appendingPathComponent("timestamps")
+    try FileManager.default.createDirectory(at: timestampRoot, withIntermediateDirectories: true)
+    let timestampFile = timestampRoot.appendingPathComponent("rollout-timestamp-thread.jsonl")
+    try writeRollout(file: timestampFile, source: "vscode", total: 10_000)
+    try appendRolloutLine([
+        "timestamp": "2020-01-01T00:00:00.123Z",
+        "type": "event_msg",
+        "payload": ["type": "error"],
+    ], to: timestampFile)
+    try appendRolloutLine([
+        "timestamp": "2020-01-01T00:00:01.456Z",
+        "type": "event_msg",
+        "payload": ["type": "error"],
+    ], to: timestampFile)
+    try appendRolloutLine([
+        "type": "event_msg",
+        "payload": ["type": "task_started"],
+    ], to: timestampFile)
+    let timestampReader = RolloutReader(sessionsRoot: timestampRoot)
+    try expect(
+        timestampReader.refresh()?.agentPulse != .unstable,
+        "fractional ISO timestamps keep historical errors outside the pulse window"
+    )
 
     let incrementalRoot = tempRoot.appendingPathComponent("incremental")
     try FileManager.default.createDirectory(at: incrementalRoot, withIntermediateDirectories: true)
