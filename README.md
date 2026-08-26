@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/cody-usage-overlay-card-v2.png" alt="Cody Usage Overlay — Codex 사용량과 에이전트 상태를 한눈에 확인하는 오버레이" width="100%">
+</p>
+
 # Cody Usage Overlay
 
 [![CI](https://github.com/prestige-kim/cody-usage-overlay/actions/workflows/ci.yml/badge.svg)](https://github.com/prestige-kim/cody-usage-overlay/actions/workflows/ci.yml)
