@@ -4,6 +4,34 @@ public enum Freshness: String, Codable, Sendable {
     case fresh, delayed, unavailable, incompatible
 }
 
+public enum CodyState: String, Codable, Sendable {
+    case ready, thinking, acting, waiting, complete, error
+
+    public var displayName: String {
+        switch self {
+        case .ready: "준비됨"
+        case .thinking: "생각 중"
+        case .acting: "도구 실행 중"
+        case .waiting: "입력 대기"
+        case .complete: "완료"
+        case .error: "확인 필요"
+        }
+    }
+}
+
+public enum CodyStatePolicy {
+    public static func visibleState(
+        _ state: CodyState,
+        updatedAt: Date,
+        now: Date = Date(),
+        completedDisplayDuration: TimeInterval = 3
+    ) -> CodyState {
+        guard state == .complete,
+              now.timeIntervalSince(updatedAt) >= completedDisplayDuration else { return state }
+        return .ready
+    }
+}
+
 public struct UsageSnapshot: Codable, Equatable, Sendable {
     public var contextRemainingPercent: Int?
     public var fiveHourRemainingPercent: Int?
@@ -11,6 +39,10 @@ public struct UsageSnapshot: Codable, Equatable, Sendable {
     public var fiveHourResetsAt: Date?
     public var weeklyResetsAt: Date?
     public var activeThreadId: String?
+    public var codyState: CodyState
+    public var codyStateUpdatedAt: Date
+    public var agentPulse: AgentPulse
+    public var agentPulseReason: String
     public var lastUpdatedAt: Date
     public var freshness: Freshness
 
@@ -21,6 +53,10 @@ public struct UsageSnapshot: Codable, Equatable, Sendable {
         fiveHourResetsAt: Date? = nil,
         weeklyResetsAt: Date? = nil,
         activeThreadId: String? = nil,
+        codyState: CodyState = .ready,
+        codyStateUpdatedAt: Date = Date(),
+        agentPulse: AgentPulse = .steady,
+        agentPulseReason: String = "흐름 안정",
         lastUpdatedAt: Date = Date(),
         freshness: Freshness = .unavailable
     ) {
@@ -30,6 +66,10 @@ public struct UsageSnapshot: Codable, Equatable, Sendable {
         self.fiveHourResetsAt = fiveHourResetsAt
         self.weeklyResetsAt = weeklyResetsAt
         self.activeThreadId = activeThreadId
+        self.codyState = codyState
+        self.codyStateUpdatedAt = codyStateUpdatedAt
+        self.agentPulse = agentPulse
+        self.agentPulseReason = agentPulseReason
         self.lastUpdatedAt = lastUpdatedAt
         self.freshness = freshness
     }
@@ -113,12 +153,30 @@ public struct ContextUsage: Equatable, Sendable {
     public let modelContextWindow: Int
     public let updatedAt: Date
     public let rateLimits: RateLimitResult?
-    public init(threadId: String, usedTokens: Int, modelContextWindow: Int, updatedAt: Date, rateLimits: RateLimitResult? = nil) {
+    public let codyState: CodyState
+    public let codyStateUpdatedAt: Date
+    public let agentPulse: AgentPulse
+    public let agentPulseReason: String
+    public init(
+        threadId: String,
+        usedTokens: Int,
+        modelContextWindow: Int,
+        updatedAt: Date,
+        rateLimits: RateLimitResult? = nil,
+        codyState: CodyState = .ready,
+        codyStateUpdatedAt: Date = Date(),
+        agentPulse: AgentPulse = .steady,
+        agentPulseReason: String = "흐름 안정"
+    ) {
         self.threadId = threadId
         self.usedTokens = usedTokens
         self.modelContextWindow = modelContextWindow
         self.updatedAt = updatedAt
         self.rateLimits = rateLimits
+        self.codyState = codyState
+        self.codyStateUpdatedAt = codyStateUpdatedAt
+        self.agentPulse = agentPulse
+        self.agentPulseReason = agentPulseReason
     }
     public var remainingPercent: Int {
         guard modelContextWindow > 0 else { return 0 }

@@ -60,7 +60,7 @@ public final class AppServerClient: @unchecked Sendable {
         _ = try await call(
             method: "initialize",
             params: [
-                "clientInfo": ["name": "cody-usage-overlay", "title": "Cody Usage Overlay", "version": "0.2.2"],
+                "clientInfo": ["name": "cody-usage-overlay", "title": "Cody Usage Overlay", "version": "0.3.0"],
                 "capabilities": ["experimentalApi": true],
             ],
             allowUninitialized: true

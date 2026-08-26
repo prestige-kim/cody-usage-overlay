@@ -7,6 +7,31 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-26
+
+### Added
+
+- Add a compact reset-timer button that temporarily replaces the usage readout with live five-hour and weekly reset countdowns on macOS and Windows.
+- Return to the normal usage view after eight seconds, allow an immediate second-click dismissal, and refresh limits when a displayed reset time has elapsed.
+- Add Cody State Language, mapping local task and tool lifecycle events to ready, thinking, acting, waiting, complete, and error states with a fixed icon and fluid background animation.
+- Add Agent Pulse, classifying the last five minutes as steady, active, overloaded, stalled, unstable, or finishing and explaining the cause in Korean on hover.
+
+### Changed
+
+- Center the usage and countdown text within the content area so it no longer crowds the left-side controls.
+- Remove the developer emoji, rigid status ring, glyph badge, and foreground Pulse waveform to keep the overlay compact and uncluttered.
+- Center state-specific fluid colors on the full overlay while retaining a stronger local state glow behind the fixed Cody icon.
+- Integrate Agent Pulse into the background as a neutral-luminance current whose speed, density, and breathing motion remain independent from Cody State colors.
+- Present the overlay as a standalone usage and agent-status tool in the README while retaining Cody pet following as an optional compatibility feature.
+
+### Fixed
+
+- Replace the nonfunctional system tooltip on the non-activating macOS panel with an immediate in-overlay Cody state readout.
+- Detect Cody state hover from the live cursor position even in click-through mode, while retaining a three-second click fallback in interactive mode.
+- Scope the Windows state hover interaction to the Cody indicator and mirror the in-overlay state readout behavior.
+- Keep tool activity visible until the next reasoning event instead of collapsing batched tool events immediately back to thinking.
+- Poll the active rollout once per second so completion and ready transitions recover even when a filesystem event is coalesced or missed.
+
 ## [0.2.4] - 2026-08-24
 
 ### Fixed
@@ -145,7 +170,8 @@ and this project intends to follow [Semantic Versioning](https://semver.org/).
 - Apple Silicon release build only.
 - Release binaries are not yet Developer ID signed or notarized.
 
-[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/prestige-kim/cody-usage-overlay/compare/v0.2.1...v0.2.2

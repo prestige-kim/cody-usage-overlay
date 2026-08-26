@@ -85,6 +85,10 @@ public sealed class UsageCoordinator(IAppServerClient client, ISessionMonitor se
             {
                 ContextRemainingPercent = usage.RemainingPercent,
                 ActiveThreadId = usage.ThreadId,
+                CodyState = usage.CodyState,
+                CodyStateUpdatedAt = usage.CodyStateUpdatedAt,
+                AgentPulse = usage.AgentPulse,
+                AgentPulseReason = usage.AgentPulseReason,
                 LastUpdatedAt = DateTimeOffset.Now,
                 Freshness = Freshness.Fresh
             };
@@ -97,9 +101,16 @@ public sealed class UsageCoordinator(IAppServerClient client, ISessionMonitor se
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            try { sessionMonitor.RefreshActive(); } catch { }
             lock (gate)
             {
+                if (snapshot.CodyStateUpdatedAt is DateTimeOffset stateUpdatedAt)
+                {
+                    var visibleState = CodyStatePolicy.VisibleState(snapshot.CodyState, stateUpdatedAt, DateTimeOffset.Now);
+                    if (visibleState != snapshot.CodyState)
+                        snapshot = snapshot with { CodyState = visibleState, CodyStateUpdatedAt = DateTimeOffset.Now };
+                }
                 var newest = new[] { lastRateLimitUpdate, lastContextUpdate }.Where(x => x is not null).Max();
                 if (newest is not null && DateTimeOffset.Now - newest > TimeSpan.FromSeconds(90) && snapshot.Freshness == Freshness.Fresh)
                     snapshot = snapshot with { Freshness = Freshness.Delayed };
